@@ -15,7 +15,7 @@ v_max = w_max * r  # 1 m/s
 x_0 = 0
 y_0 = 0
 coord_0 = [x_0, y_0]
-phi_0 = math.pi/6
+phi_0 = 0
 
 # Target
 x_t = 10
