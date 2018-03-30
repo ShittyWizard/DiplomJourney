@@ -1,6 +1,6 @@
 import math
 
-eps = 0.01
+eps_beta = 0.1
 # Parameters
 L = 1
 r = 0.1
