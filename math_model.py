@@ -3,12 +3,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.integrate as sp
 
-from config import phi_0, L, y_t, y_0, x_t, x_0, beta_max, v_max, eps_beta, eps
+from config import phi_0, L, y_t, y_0, x_t, x_0, beta_max, v_max, eps
 
 # Actual
 beta = 0
 v = 0
-phi = float(phi_0)
+phi = phi_0
 x = x_0
 y = y_0
 coord_actual = [x, y]
@@ -16,9 +16,9 @@ coord_actual = [x, y]
 t = 0
 delta_t = 0.5
 delta_v = 0.2
-delta_beta = math.pi / 18
+delta_beta = math.pi / 24
 
-# Prediction horizon * delta_t = 2.5s
+# Prediction horizon * delta_t = 1.5s
 prediction_horizon = 3
 
 # Generate vector from minimal possible velocity to maximum possible velocity
@@ -40,11 +40,6 @@ vector_distance = np.arange(0, 0, 0.1)
 result_vector_x = [x]
 result_vector_y = [y]
 result_vector_phi = [phi]
-
-# Generate vectors with coordinates for calculation of trajectory
-predicted_vector_x = [x]
-predicted_vector_y = [y]
-predicted_vector_phi = [phi]
 
 
 def is_on_target(actual_x, actual_y, target_x, target_y):
@@ -80,12 +75,12 @@ def predict_beta(vector_angle_beta):
     return saturation(vector_angle_beta[random.randint(0, size(vector_angle_beta))], beta_max)
 
 
-def v_x(time, _velocity):
-    return _velocity * cos(phi)
+def v_x(time, _velocity, _phi):
+    return _velocity * cos(_phi)
 
 
-def v_y(time, _velocity):
-    return _velocity * sin(phi)
+def v_y(time, _velocity, _phi):
+    return _velocity * sin(_phi)
 
 
 def v_phi(time, _velocity, angle_beta):
@@ -100,20 +95,20 @@ def control_criterion(_predicted_x, _predicted_y, _predicted_phi):
 
 
 # Integration
-def integrate_velocity(velocity_function, velocity_value, t_start, t_stop):
-    return sp.quad(velocity_function, t_start, t_stop, args=(velocity_value,))[0]
+def integrate_velocity(velocity_function, velocity_value, _phi, t_start, t_stop):
+    return sp.quad(velocity_function, t_start, t_stop, args=(velocity_value, _phi))[0]
 
 
 def integrate_angle(angle_function, velocity_value, angle_value, t_start, t_stop):
     return sp.quad(angle_function, t_start, t_stop, args=(velocity_value, angle_value))[0]
 
 
-def coordinate_x(_v):
-    return integrate_velocity(v_x, _v, t, t + delta_t)
+def coordinate_x(_v, _phi):
+    return integrate_velocity(v_x, _v, _phi, t, t + delta_t)
 
 
-def coordinate_y(_v):
-    return integrate_velocity(v_y, _v, t, t + delta_t)
+def coordinate_y(_v, _phi):
+    return integrate_velocity(v_y, _v, _phi, t, t + delta_t)
 
 
 def angle_phi(_v, _beta):
@@ -121,14 +116,14 @@ def angle_phi(_v, _beta):
 
 
 def iteration_of_predict(_initial_coordinates, _v, _angle):
-    _x = coordinate_x(_v)
-    _y = coordinate_y(_v)
     _phi = angle_phi(_v, _angle)
+    _x = coordinate_x(_v, _initial_coordinates[2] + _phi)
+    _y = coordinate_y(_v, _initial_coordinates[2] + _phi)
     return [_initial_coordinates[0] + _x, _initial_coordinates[1] + _y, _initial_coordinates[2] + _phi]
 
 
 # while not is_on_target(x, y, x_t, y_t):
-initial_coordinates_0 = [x_0, y_0, phi_0]
+initial_coordinates_0 = [x, y, phi]
 initial_coordinates_1 = []
 initial_coordinates_2 = []
 initial_coordinates_3 = []
@@ -155,27 +150,45 @@ for i in range(prediction_horizon):
         print("third done")
 
 # Plotting
+# Generate vectors with coordinates for calculation of trajectory
+predicted_vector_x_2 = [x]
+predicted_vector_y_2 = [y]
+predicted_vector_phi_2 = [phi]
+
+predicted_vector_x_3 = [x]
+predicted_vector_y_3 = [y]
+predicted_vector_phi_3 = [phi]
+
+for coordinates in initial_coordinates_2:
+    predicted_vector_x_2.append(coordinates[0])
+    predicted_vector_y_2.append(coordinates[1])
+    predicted_vector_phi_2.append(coordinates[2])
 
 for coordinates in initial_coordinates_3:
-    predicted_vector_x.append(coordinates[0])
-    predicted_vector_y.append(coordinates[1])
+    predicted_vector_x_3.append(coordinates[0])
+    predicted_vector_y_3.append(coordinates[1])
+    predicted_vector_phi_3.append(coordinates[2])
 
+# plt.figure(1)
+# # plt.subplot(311)
+# plt.plot(predicted_vector_phi, 'bo')
+#
+# plt.subplot(312)
+# plt.plot(predicted_vector_x, 'bo')
+#
+# plt.subplot(313)
+# plt.plot(predicted_vector_y, 'bo')
+# plt.show()
 
 plt.figure(1)
 plt.xlabel("Coordinate X")
 plt.ylabel("Coordinate Y")
-plt.scatter(predicted_vector_x, predicted_vector_y)
-plt.show()
-
-
-# plt.figure(1)
-# plt.xlabel("Coordinate X")
-# plt.ylabel("Coordinate Y")
-# plt.plot(result_vector_x, result_vector_y)
+plt.grid()
+plt.scatter(predicted_vector_x_3, predicted_vector_y_3, 8, 'red')
 #
 # plt.figure(2)
 # plt.xlabel("Time")
 # plt.ylabel("Angle Phi")
 # plt.plot(np.linspace(0, 100, np.size(result_vector_phi)), result_vector_phi)
 #
-# plt.show()
+plt.show()
