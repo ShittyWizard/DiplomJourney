@@ -18,18 +18,19 @@ delta_t = 0.5
 delta_v = 0.2
 delta_beta = math.pi / 18
 
-prediction_horizon = 5
+# Prediction horizon * delta_t = 2.5s
+prediction_horizon = 3
 
 # Generate vector from minimal possible velocity to maximum possible velocity
 vector_v = np.arange(v, v_max + delta_v, delta_v)
 vector_v = np.round(vector_v, 3)
-# [0.0 0.2 0.4 0.6 0.8 1.0]
+# [0.0 0.2 0.4 0.6 0.8 1.0]  6
 
 
 # Generate vector from minimal possible angle to maximum possible angle
 vector_beta = np.arange(-beta_max, beta_max + delta_beta, delta_beta)
 vector_beta = np.round(vector_beta, 3)
-# [-0.524 -0.349 -0.175  0.000  0.175  0.349  0.524]
+# [-0.524 -0.349 -0.175  0.000  0.175  0.349  0.524]  7
 
 
 #  Generate vector with distance from robot's actual position to line from initial position to target
@@ -119,49 +120,62 @@ def angle_phi(_v, _beta):
     return integrate_angle(v_phi, _v, _beta, t, t + delta_t)
 
 
-def iteration_of_predict(_v, _angle):
+def iteration_of_predict(_initial_coordinates, _v, _angle):
     _x = coordinate_x(_v)
     _y = coordinate_y(_v)
     _phi = angle_phi(_v, _angle)
-    return [_x, _y, _phi]
+    return [_initial_coordinates[0] + _x, _initial_coordinates[1] + _y, _initial_coordinates[2] + _phi]
 
 
-while not is_on_target(x, y, x_t, y_t):
+# while not is_on_target(x, y, x_t, y_t):
+initial_coordinates_0 = [x_0, y_0, phi_0]
+initial_coordinates_1 = []
+initial_coordinates_2 = []
+initial_coordinates_3 = []
 
-    initial_x = [x_0]
-    initial_y = [y_0]
-    initial_phi = [phi_0]
-
-    for i in range(prediction_horizon):
+for i in range(prediction_horizon):
+    if i == 0:
         for velocity in vector_v:
             for angle in vector_beta:
-                predicted_x = coordinate_x(velocity)
-                predicted_y = coordinate_y(velocity)
-                predicted_phi = angle_phi(velocity, angle)
+                initial_coordinates_1.append(iteration_of_predict(initial_coordinates_0, velocity, angle))
+        print("first done")
+    elif i == 1:
+        t += delta_t
+        for velocity in vector_v:
+            for angle in vector_beta:
+                for coordinates in initial_coordinates_1:
+                    initial_coordinates_2.append(iteration_of_predict(coordinates, velocity, angle))
+        print("second done")
+    elif i == 2:
+        t += delta_t
+        for velocity in vector_v:
+            for angle in vector_beta:
+                for coordinates in initial_coordinates_2:
+                    initial_coordinates_3.append(iteration_of_predict(coordinates, velocity, angle))
+        print("third done")
 
-                initial_x.append(predicted_x)
-                initial_y.append(predicted_y)
-                initial_phi.append(predicted_phi)
+# Plotting
 
-while t < 100:
-    beta = predict_beta(vector_beta)
-    v = 0.5
-    phi += angle_phi(v, beta)
-    x += coordinate_x(v)
-    y += coordinate_y(v)
-    t += delta_t
-    result_vector_x.append(x)
-    result_vector_y.append(y)
-    result_vector_phi.append(phi)
+for coordinates in initial_coordinates_3:
+    predicted_vector_x.append(coordinates[0])
+    predicted_vector_y.append(coordinates[1])
+
 
 plt.figure(1)
 plt.xlabel("Coordinate X")
 plt.ylabel("Coordinate Y")
-plt.plot(result_vector_x, result_vector_y)
-
-plt.figure(2)
-plt.xlabel("Time")
-plt.ylabel("Angle Phi")
-plt.plot(np.linspace(0, 100, np.size(result_vector_phi)), result_vector_phi)
-
+plt.scatter(predicted_vector_x, predicted_vector_y)
 plt.show()
+
+
+# plt.figure(1)
+# plt.xlabel("Coordinate X")
+# plt.ylabel("Coordinate Y")
+# plt.plot(result_vector_x, result_vector_y)
+#
+# plt.figure(2)
+# plt.xlabel("Time")
+# plt.ylabel("Angle Phi")
+# plt.plot(np.linspace(0, 100, np.size(result_vector_phi)), result_vector_phi)
+#
+# plt.show()
