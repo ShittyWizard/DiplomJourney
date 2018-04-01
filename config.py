@@ -1,5 +1,7 @@
 import math
 
+
+eps = 0.5
 eps_beta = 0.1
 # Parameters
 L = 1
@@ -15,10 +17,10 @@ v_max = w_max * r  # 1 m/s
 x_0 = 0
 y_0 = 0
 coord_0 = [x_0, y_0]
-phi_0 = 0
+phi_0 = math.pi/4
 
 # Target
 x_t = 10
 y_t = 10
 coord_t = [x_t, y_t]
-phi_t = 0
+phi_t = math.pi/4
