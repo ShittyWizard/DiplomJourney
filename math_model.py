@@ -33,6 +33,10 @@ result_vector_x = [x]
 result_vector_y = [y]
 result_vector_phi = [phi]
 
+predicted_vector_x = [x]
+predicted_vector_y = [y]
+predicted_vector_phi = [phi]
+
 
 # Function for getting distance from robot's actual position to line from initial position to target
 def get_distance(x_a, y_a):
