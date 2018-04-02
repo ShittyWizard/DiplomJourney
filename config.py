@@ -4,12 +4,15 @@ import math
 eps = 0.5
 eps_beta = 0.1
 # Parameters
-L = 1
-r = 0.1
+L = 0.2
+r = 0.05
 
 # Constraints
+delta_t = 0.5
+delta_v = 0.2
+delta_beta = math.pi / 24
 beta_max = math.pi / 6
-w_max = 10
+w_max = 20
 v_max = w_max * r  # 1 m/s
 
 # Initial conditions

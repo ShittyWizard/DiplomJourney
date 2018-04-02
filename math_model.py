@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.integrate as sp
 
-from config import phi_0, L, y_t, y_0, x_t, x_0, beta_max, v_max, eps
+from config import phi_0, L, y_t, y_0, x_t, x_0, beta_max, v_max, eps, delta_t, delta_beta, delta_v
 
 # Actual
 beta = 0
@@ -14,9 +14,6 @@ y = y_0
 coord_actual = [x, y]
 
 t = 0
-delta_t = 0.5
-delta_v = 0.2
-delta_beta = math.pi / 24
 
 # Prediction horizon * delta_t = 1.5s
 prediction_horizon = 3
@@ -24,14 +21,12 @@ prediction_horizon = 3
 # Generate vector from minimal possible velocity to maximum possible velocity
 vector_v = np.arange(v, v_max + delta_v, delta_v)
 vector_v = np.round(vector_v, 3)
-# [0.0 0.2 0.4 0.6 0.8 1.0]  6
-
+print(vector_v)
 
 # Generate vector from minimal possible angle to maximum possible angle
 vector_beta = np.arange(-beta_max, beta_max + delta_beta, delta_beta)
 vector_beta = np.round(vector_beta, 3)
-# [-0.524 -0.349 -0.175  0.000  0.175  0.349  0.524]  7
-
+print(vector_beta)
 
 #  Generate vector with distance from robot's actual position to line from initial position to target
 vector_distance = np.arange(0, 0, 0.1)
@@ -89,7 +84,7 @@ def v_phi(time, _velocity, angle_beta):
 
 def control_criterion(_predicted_x, _predicted_y, _predicted_phi):
     distance_from_line = get_distance_from_line(_predicted_x, _predicted_y)
-    distance_from_target = get_distance_from_target(predicted_vector_x, _predicted_y)
+    distance_from_target = get_distance_from_target(_predicted_x, _predicted_y)
     # Add angle criterion
     return distance_from_line + distance_from_target
 
@@ -151,18 +146,27 @@ for i in range(prediction_horizon):
 
 # Plotting
 # Generate vectors with coordinates for calculation of trajectory
+predicted_vector_x_1 = [x]
+predicted_vector_y_1 = [y]
+predicted_vector_phi_1 = [phi]
+
+for coordinates in initial_coordinates_1:
+    predicted_vector_x_1.append(coordinates[0])
+    predicted_vector_y_1.append(coordinates[1])
+    predicted_vector_phi_1.append(coordinates[2])
+
 predicted_vector_x_2 = [x]
 predicted_vector_y_2 = [y]
 predicted_vector_phi_2 = [phi]
-
-predicted_vector_x_3 = [x]
-predicted_vector_y_3 = [y]
-predicted_vector_phi_3 = [phi]
 
 for coordinates in initial_coordinates_2:
     predicted_vector_x_2.append(coordinates[0])
     predicted_vector_y_2.append(coordinates[1])
     predicted_vector_phi_2.append(coordinates[2])
+
+predicted_vector_x_3 = [x]
+predicted_vector_y_3 = [y]
+predicted_vector_phi_3 = [phi]
 
 for coordinates in initial_coordinates_3:
     predicted_vector_x_3.append(coordinates[0])
@@ -170,25 +174,32 @@ for coordinates in initial_coordinates_3:
     predicted_vector_phi_3.append(coordinates[2])
 
 # plt.figure(1)
-# # plt.subplot(311)
-# plt.plot(predicted_vector_phi, 'bo')
+# plt.xlabel("Coordinate X")
+# plt.ylabel("Coordinate Y")
+# plt.grid()
+# plt.scatter(predicted_vector_x_3, predicted_vector_y_3, 2, linewidths=2, c='blue', edgecolors='blue',
+#             label=r'Possible coordinates for 3 next steps(1,5s)')
+# plt.scatter(predicted_vector_x_2, predicted_vector_y_2, 2, linewidths=8, c='green', edgecolors='green',
+#             label=r'Possible coordinates for 2 next steps(1,0s)')
+# plt.scatter(predicted_vector_x_1, predicted_vector_y_1, 2, linewidths=8, c='red', edgecolors='red',
+#             label=r'Possible coordinates for 1 next step(0,5s)')
 #
-# plt.subplot(312)
-# plt.plot(predicted_vector_x, 'bo')
-#
-# plt.subplot(313)
-# plt.plot(predicted_vector_y, 'bo')
-# plt.show()
+# plt.legend(fontsize=15)  # legend(loc='upper left')
+# plt.title(
+#     r'$\varphi_0 = \pi/2' + ', ' + r'\beta_{max} = \pi /6' + ', ' + r'L = 0.5m' + ', ' +
+#     r'r = 0.05m' + ', ' + r'V_{max} = 1m/s$', fontsize=20)
 
 plt.figure(1)
 plt.xlabel("Coordinate X")
 plt.ylabel("Coordinate Y")
 plt.grid()
-plt.scatter(predicted_vector_x_3, predicted_vector_y_3, 8, 'red')
-#
-# plt.figure(2)
-# plt.xlabel("Time")
-# plt.ylabel("Angle Phi")
-# plt.plot(np.linspace(0, 100, np.size(result_vector_phi)), result_vector_phi)
-#
+plt.quiver(predicted_vector_x_1, predicted_vector_y_1, L * cos(predicted_vector_phi_1), L * sin(predicted_vector_phi_1),
+           width=0.003,
+           scale=L/L,
+           pivot='mid',
+           edgecolor='b', facecolor='None', linewidth=.5)
+plt.scatter(predicted_vector_x_1, predicted_vector_y_1, c='blue', linewidths=0.5)
+plt.title(r'$\varphi_0 = \pi/6' + ', ' + r'\beta_{max} = \pi /6' + ', ' + r'L = 0.2m' + ', ' +
+    r'r = 0.05m' + ', ' + r'V_{max} = 1m/s$', fontsize=20)
+
 plt.show()
