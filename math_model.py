@@ -28,13 +28,15 @@ vector_beta = np.arange(-beta_max, beta_max + delta_beta, delta_beta)
 vector_beta = np.round(vector_beta, 3)
 print(vector_beta)
 
-#  Generate vector with distance from robot's actual position to line from initial position to target
-vector_distance = np.arange(0, 0, 0.1)
-
 # Generate vectors with coordinates for plotting
 result_vector_x = [x]
 result_vector_y = [y]
 result_vector_phi = [phi]
+
+optimal_criterion = 0
+
+# Stack with coordinates for optimal trajectory
+optimal_trajectory = [0]
 
 
 def is_on_target(actual_x, actual_y, target_x, target_y):
@@ -50,7 +52,7 @@ def get_distance_from_line(x_a, y_a):
 
 
 def get_distance_from_target(x_a, y_a):
-    return math.sqrt((x_t - x_a) ^ 2 + (y_t - y_a) ^ 2)
+    return math.sqrt((x_t - x_a) ** 2 + (y_t - y_a) ** 2)
 
 
 def saturation(value, value_max):
@@ -82,11 +84,11 @@ def v_phi(time, _velocity, angle_beta):
     return (_velocity / L) * math.tan(angle_beta)
 
 
-def control_criterion(_predicted_x, _predicted_y, _predicted_phi):
-    distance_from_line = get_distance_from_line(_predicted_x, _predicted_y)
-    distance_from_target = get_distance_from_target(_predicted_x, _predicted_y)
-    # Add angle criterion
-    return distance_from_line + distance_from_target
+# Criterion for optimizing movement
+def control_criterion(predicted_coordinates):
+    angle_from_line = arctan(x_t / y_t) - predicted_coordinates[2]
+    distance_from_target = get_distance_from_target(predicted_coordinates[0], predicted_coordinates[1])
+    return distance_from_target ** 2 + 10 * angle_from_line ** 2
 
 
 # Integration
@@ -112,8 +114,8 @@ def angle_phi(_v, _beta):
 
 def iteration_of_predict(_initial_coordinates, _v, _angle):
     _phi = angle_phi(_v, _angle)
-    _x = coordinate_x(_v, _initial_coordinates[2] + _phi)
-    _y = coordinate_y(_v, _initial_coordinates[2] + _phi)
+    _x = coordinate_x(_v, _initial_coordinates[0][2] + _phi)
+    _y = coordinate_y(_v, _initial_coordinates[0][2] + _phi)
     return [_initial_coordinates[0] + _x, _initial_coordinates[1] + _y, _initial_coordinates[2] + _phi]
 
 
@@ -127,52 +129,76 @@ for i in range(prediction_horizon):
     if i == 0:
         for velocity in vector_v:
             for angle in vector_beta:
-                initial_coordinates_1.append(iteration_of_predict(initial_coordinates_0, velocity, angle))
-        print("first done")
+                initial_coordinates_1.append(
+                    iteration_of_predict(initial_coordinates_0, velocity, angle))
+                print(initial_coordinates_1)
+        print("First layer done")
     elif i == 1:
         t += delta_t
         for velocity in vector_v:
             for angle in vector_beta:
                 for coordinates in initial_coordinates_1:
                     initial_coordinates_2.append(iteration_of_predict(coordinates, velocity, angle))
-        print("second done")
+        print("Second layer done")
     elif i == 2:
         t += delta_t
+        i = 0
         for velocity in vector_v:
             for angle in vector_beta:
                 for coordinates in initial_coordinates_2:
                     initial_coordinates_3.append(iteration_of_predict(coordinates, velocity, angle))
-        print("third done")
+                    if i == 0:
+                        optimal_criterion = control_criterion(coordinates)
+                        i += 1
+                    if control_criterion(coordinates) < optimal_criterion:
+                        optimal_trajectory.pop()
+                        optimal_criterion = control_criterion(coordinates)
+                        optimal_trajectory.append(coordinates)
+        print("Third layer done")
+        print("Criterion = " + str(optimal_criterion))
+        print("Optimal trajectory = " + str(optimal_trajectory))
+
+print([x_0, y_0], [x_t, y_t])
+
+plt.figure(1)
+plt.xlabel("Coordinate X")
+plt.ylabel("Coordinate Y")
+plt.grid()
+plt.plot([x_0, x_t], [y_0, y_t])
+plt.quiver(optimal_trajectory[0][0], optimal_trajectory[0][1], L * cos(optimal_trajectory[0][2]),
+           L * sin(optimal_trajectory[0][2]))
+
+plt.show()
 
 # Plotting
 # Generate vectors with coordinates for calculation of trajectory
-predicted_vector_x_1 = [x]
-predicted_vector_y_1 = [y]
-predicted_vector_phi_1 = [phi]
-
-for coordinates in initial_coordinates_1:
-    predicted_vector_x_1.append(coordinates[0])
-    predicted_vector_y_1.append(coordinates[1])
-    predicted_vector_phi_1.append(coordinates[2])
-
-predicted_vector_x_2 = [x]
-predicted_vector_y_2 = [y]
-predicted_vector_phi_2 = [phi]
-
-for coordinates in initial_coordinates_2:
-    predicted_vector_x_2.append(coordinates[0])
-    predicted_vector_y_2.append(coordinates[1])
-    predicted_vector_phi_2.append(coordinates[2])
-
-predicted_vector_x_3 = [x]
-predicted_vector_y_3 = [y]
-predicted_vector_phi_3 = [phi]
-
-for coordinates in initial_coordinates_3:
-    predicted_vector_x_3.append(coordinates[0])
-    predicted_vector_y_3.append(coordinates[1])
-    predicted_vector_phi_3.append(coordinates[2])
-
+# predicted_vector_x_1 = [x]
+# predicted_vector_y_1 = [y]
+# predicted_vector_phi_1 = [phi]
+#
+# for coordinates in initial_coordinates_1:
+#     predicted_vector_x_1.append(coordinates[0])
+#     predicted_vector_y_1.append(coordinates[1])
+#     predicted_vector_phi_1.append(coordinates[2])
+#
+# predicted_vector_x_2 = [x]
+# predicted_vector_y_2 = [y]
+# predicted_vector_phi_2 = [phi]
+#
+# for coordinates in initial_coordinates_2:
+#     predicted_vector_x_2.append(coordinates[0])
+#     predicted_vector_y_2.append(coordinates[1])
+#     predicted_vector_phi_2.append(coordinates[2])
+#
+# predicted_vector_x_3 = [x]
+# predicted_vector_y_3 = [y]
+# predicted_vector_phi_3 = [phi]
+#
+# for coordinates in initial_coordinates_3:
+#     predicted_vector_x_3.append(coordinates[0])
+#     predicted_vector_y_3.append(coordinates[1])
+#     predicted_vector_phi_3.append(coordinates[2])
+#
 # plt.figure(1)
 # plt.xlabel("Coordinate X")
 # plt.ylabel("Coordinate Y")
@@ -188,18 +214,5 @@ for coordinates in initial_coordinates_3:
 # plt.title(
 #     r'$\varphi_0 = \pi/2' + ', ' + r'\beta_{max} = \pi /6' + ', ' + r'L = 0.5m' + ', ' +
 #     r'r = 0.05m' + ', ' + r'V_{max} = 1m/s$', fontsize=20)
-
-plt.figure(1)
-plt.xlabel("Coordinate X")
-plt.ylabel("Coordinate Y")
-plt.grid()
-plt.quiver(predicted_vector_x_1, predicted_vector_y_1, L * cos(predicted_vector_phi_1), L * sin(predicted_vector_phi_1),
-           width=0.003,
-           scale=L/L,
-           pivot='mid',
-           edgecolor='b', facecolor='None', linewidth=.5)
-plt.scatter(predicted_vector_x_1, predicted_vector_y_1, c='blue', linewidths=0.5)
-plt.title(r'$\varphi_0 = \pi/6' + ', ' + r'\beta_{max} = \pi /6' + ', ' + r'L = 0.2m' + ', ' +
-    r'r = 0.05m' + ', ' + r'V_{max} = 1m/s$', fontsize=20)
 
 plt.show()
