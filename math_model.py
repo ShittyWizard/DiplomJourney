@@ -114,8 +114,8 @@ def angle_phi(_v, _beta):
 
 def iteration_of_predict(_initial_coordinates, _v, _angle):
     _phi = angle_phi(_v, _angle)
-    _x = coordinate_x(_v, _initial_coordinates[0][2] + _phi)
-    _y = coordinate_y(_v, _initial_coordinates[0][2] + _phi)
+    _x = coordinate_x(_v, _initial_coordinates[2] + _phi)
+    _y = coordinate_y(_v, _initial_coordinates[2] + _phi)
     return [_initial_coordinates[0] + _x, _initial_coordinates[1] + _y, _initial_coordinates[2] + _phi]
 
 
@@ -131,7 +131,6 @@ for i in range(prediction_horizon):
             for angle in vector_beta:
                 initial_coordinates_1.append(
                     iteration_of_predict(initial_coordinates_0, velocity, angle))
-                print(initial_coordinates_1)
         print("First layer done")
     elif i == 1:
         t += delta_t
