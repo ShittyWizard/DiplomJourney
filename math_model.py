@@ -33,8 +33,6 @@ result_vector_x = [x]
 result_vector_y = [y]
 result_vector_phi = [phi]
 
-optimal_criterion = 0
-
 # Stack with coordinates for optimal trajectory
 optimal_trajectory = [0]
 
@@ -46,8 +44,11 @@ def is_on_target(actual_x, actual_y, target_x, target_y):
 
 # Function for getting distance from robot's actual position to line from initial position to target
 def get_distance_from_line(x_a, y_a):
-    distance = (abs((y_t - y_0) * x_a - (x_t - x_0) * y_a + x_t * y_0 - y_t * x_0)
-                / (math.sqrt((y_t - y_0) ** 2 + (x_t - x_0) ** 2)))
+    if x_a == x_0 and y_a == y_0:
+        distance = 1000
+    else:
+        distance = (abs((y_t - y_0) * x_a - (x_t - x_0) * y_a + x_t * y_0 - y_t * x_0)
+                    / (math.sqrt((y_t - y_0) ** 2 + (x_t - x_0) ** 2)))
     return distance
 
 
@@ -88,7 +89,12 @@ def v_phi(time, _velocity, angle_beta):
 def control_criterion(predicted_coordinates):
     angle_from_line = arctan(x_t / y_t) - predicted_coordinates[2].real
     distance_from_target = get_distance_from_target(predicted_coordinates[0].real, predicted_coordinates[1].real)
-    return distance_from_target ** 2 + 5 * angle_from_line ** 2
+    return distance_from_target ** 2 + angle_from_line ** 2
+
+
+# def control_criterion_distance_from_line(predicted_coordinates):
+#     distance_from_line = get_distance_from_line(predicted_coordinates[0].real, predicted_coordinates[1].real)
+#     return distance_from_line ** 2
 
 
 # Integration
@@ -127,6 +133,8 @@ coordinates_1 = []
 coordinates_2 = []
 coordinates_3 = []
 
+optimal_criterion = 1000
+
 for i in range(prediction_horizon):
     if i == 0:
         for velocity in vector_v:
@@ -142,20 +150,16 @@ for i in range(prediction_horizon):
         print("Second layer done.")
     elif i == 2:
         t += delta_t
-        i = 0
         for velocity in vector_v:
             for angle in vector_beta:
                 for coordinates in coordinates_2:
                     coordinates_3.append(iteration_of_predict(coordinates, velocity, angle))
-                    if i == 0:
-                        optimal_criterion = control_criterion(coordinates)
-                        i += 1
                     if control_criterion(coordinates) < optimal_criterion:
                         optimal_trajectory.pop()
                         optimal_criterion = control_criterion(coordinates)
                         optimal_trajectory.append(coordinates)
         print("Third layer done.")
-        print("Criterion = " + str(optimal_criterion))
+        print("Optimal_criterion = " + str(optimal_criterion))
         print("Optimal trajectory = " + str(optimal_trajectory))
 
 plt.figure(1)
@@ -185,7 +189,7 @@ plt.show()
 # predicted_vector_y_2 = [y]
 # predicted_vector_phi_2 = [phi]
 #
-# for coordinates in initial_coordinates_2:
+# for coordinates5 in initial_coordinates_2:
 #     predicted_vector_x_2.append(coordinates[0])
 #     predicted_vector_y_2.append(coordinates[1])
 #     predicted_vector_phi_2.append(coordinates[2])
