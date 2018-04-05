@@ -87,13 +87,13 @@ def v_phi(time, _velocity, angle_beta):
 
 # Criterion for optimizing movement
 def control_criterion(predicted_coordinates):
-    angle_from_line = arctan(x_t / y_t) - predicted_coordinates[2].real
-    distance_from_target = get_distance_from_target(predicted_coordinates[0].real, predicted_coordinates[1].real)
+    angle_from_line = arctan(x_t / y_t) - predicted_coordinates[2]
+    distance_from_target = get_distance_from_target(predicted_coordinates[0], predicted_coordinates[1])
     return distance_from_target ** 2 + angle_from_line ** 2
 
 
 # def control_criterion_distance_from_line(predicted_coordinates):
-#     distance_from_line = get_distance_from_line(predicted_coordinates[0].real, predicted_coordinates[1].real)
+#     distance_from_line = get_distance_from_line(predicted_coordinates[0], predicted_coordinates[1])
 #     return distance_from_line ** 2
 
 
@@ -118,69 +118,81 @@ def angle_phi(_v, _beta):
     return integrate_angle(v_phi, _v, _beta, t, t + delta_t)
 
 
-def iteration_of_predict(_initial_coordinates, _v, _angle):
+def iteration_of_predict_0(_initial_coordinates, _v, _angle):
     _phi = angle_phi(_v, _angle)
-    _x = coordinate_x(_v, _initial_coordinates[2].real + _phi)
-    _y = coordinate_y(_v, _initial_coordinates[2].real + _phi)
-    return [complex(_initial_coordinates[0].real + _x, _initial_coordinates[0].real),
-            complex(_initial_coordinates[1].real + _y, _initial_coordinates[1].real),
-            complex(_initial_coordinates[2].real + _phi, _initial_coordinates[2].real)]
+    _x = coordinate_x(_v, _initial_coordinates[2] + _phi)
+    _y = coordinate_y(_v, _initial_coordinates[2] + _phi)
+    return [_initial_coordinates[0] + _x, _initial_coordinates[1] + _y, _initial_coordinates[2] + _phi]
 
 
-# while not is_on_target(x, y, x_t, y_t):
-initial_coordinates = [x, y, phi]
-coordinates_1 = []
-coordinates_2 = []
-coordinates_3 = []
+def iteration_of_predict_1(_global_coordinates, _v, _angle):
+    _phi = angle_phi(_v, _angle)
+    _x = coordinate_x(_v, _global_coordinates[2][1] + _phi)
+    _y = coordinate_y(_v, _global_coordinates[2][1] + _phi)
+    return
+
+
+def iteration_of_predict_2(_coordinates, _v, _angle):
+    _phi = angle_phi(_v, _angle)
+    _x = coordinate_x(_v, _coordinates[2][2] + _phi)
+    _y = coordinate_y(_v, _coordinates[2][2] + _phi)
+    return
+
 
 optimal_criterion = 1000
+initial_coordinates = [x, y, phi]
+# global_coordinates = [[[0 for n in range(3)] for m in range(3)] for p in
+#                       range((size(vector_beta) * size(vector_v)) ** 3)]
+# global_coordinates = [[[], ], ]
+global_coordinates = np.empty([(size(vector_beta) * size(vector_v)) ** 3, 3, 3])
 
 for i in range(prediction_horizon):
     if i == 0:
+        j = 0
         for velocity in vector_v:
             for angle in vector_beta:
-                coordinates_1.append(iteration_of_predict(initial_coordinates, velocity, angle))
+                temp = iteration_of_predict_0(initial_coordinates, velocity, angle)
+                print(temp)
+                global_coordinates[j][0][0] = temp[0]
+                j += 1
+        print(global_coordinates)
         print("First layer done.")
-    elif i == 1:
-        t += delta_t
-        for velocity in vector_v:
-            for angle in vector_beta:
-                for coordinates in coordinates_1:
-                    coordinates_2.append(iteration_of_predict(coordinates, velocity, angle))
-        print("Second layer done.")
-    elif i == 2:
-        t += delta_t
-        for velocity in vector_v:
-            for angle in vector_beta:
-                for coordinates in coordinates_2:
-                    coordinates_3.append(iteration_of_predict(coordinates, velocity, angle))
-                    if control_criterion(coordinates) < optimal_criterion:
-                        optimal_trajectory.pop()
-                        optimal_criterion = control_criterion(coordinates)
-                        optimal_trajectory.append(coordinates)
-        print("Third layer done.")
-        print("Optimal_criterion = " + str(optimal_criterion))
-        print("Optimal trajectory = " + str(optimal_trajectory))
+#     elif i == 1:
+#         j = 0
+#         t += delta_t
+#         for velocity in vector_v:
+#             for angle in vector_beta:
+#                 for coordinates in global_coordinates:
+#                     iteration_of_predict(coordinates, velocity, angle, j)
+#                     j += 1
+#         print("Second layer done.")
+#     elif i == 2:
+#         j = 0
+#         t += delta_t
+#         for velocity in vector_v:
+#             for angle in vector_beta:
+#                 for coordinates in global_coordinates:
+#                     iteration_of_predict(coordinates, velocity, angle, j)
+#                     j += 1
+#         print("Third layer done.")
+#
+# for coordinates in global_coordinates:
+#     if control_criterion(coordinates) < optimal_criterion:
+#         optimal_trajectory.pop()
+#         optimal_criterion = control_criterion(coordinates)
+#         optimal_trajectory.append(coordinates)
+# print("Optimal_criterion = " + str(optimal_criterion))
+#
+# plt.figure(1)
+# plt.xlabel("Coordinate X")
+# plt.ylabel("Coordinate Y")
+# plt.grid()
 
-plt.figure(1)
-plt.xlabel("Coordinate X")
-plt.ylabel("Coordinate Y")
-plt.grid()
-plt.plot([x_0, x_t], [y_0, y_t])
-plt.quiver(optimal_trajectory[0][0].real, optimal_trajectory[0][1].real, L * cos(optimal_trajectory[0][2].real),
-           L * sin(optimal_trajectory[0][2].real))
-
-plt.quiver(optimal_trajectory[0][0].imag, optimal_trajectory[0][1].imag, L * cos(optimal_trajectory[0][2].imag),
-           L * sin(optimal_trajectory[0][2].imag))
-
-plt.show()
-# Plotting
-# Generate vectors with coordinates for calculation of trajectory
 # predicted_vector_x_1 = [x]
 # predicted_vector_y_1 = [y]
 # predicted_vector_phi_1 = [phi]
 #
-# for coordinates in initial_coordinates_1:
+# for coordinates in coordinates_1:
 #     predicted_vector_x_1.append(coordinates[0])
 #     predicted_vector_y_1.append(coordinates[1])
 #     predicted_vector_phi_1.append(coordinates[2])
@@ -189,7 +201,7 @@ plt.show()
 # predicted_vector_y_2 = [y]
 # predicted_vector_phi_2 = [phi]
 #
-# for coordinates5 in initial_coordinates_2:
+# for coordinates in coordinates_2:
 #     predicted_vector_x_2.append(coordinates[0])
 #     predicted_vector_y_2.append(coordinates[1])
 #     predicted_vector_phi_2.append(coordinates[2])
@@ -198,25 +210,33 @@ plt.show()
 # predicted_vector_y_3 = [y]
 # predicted_vector_phi_3 = [phi]
 #
-# for coordinates in initial_coordinates_3:
+# for coordinates in coordinates_3:
 #     predicted_vector_x_3.append(coordinates[0])
 #     predicted_vector_y_3.append(coordinates[1])
 #     predicted_vector_phi_3.append(coordinates[2])
-#
-# plt.figure(1)
-# plt.xlabel("Coordinate X")
-# plt.ylabel("Coordinate Y")
-# plt.grid()
-# plt.scatter(predicted_vector_x_3, predicted_vector_y_3, 2, linewidths=2, c='blue', edgecolors='blue',
-#             label=r'Possible coordinates for 3 next steps(1,5s)')
+
+# # plt.scatter(predicted_vector_x_3, predicted_vector_y_3, 2, linewidths=2, c='blue', edgecolors='blue',
+# #             label=r'Possible coordinates for 3 next steps(1,5s)')
 # plt.scatter(predicted_vector_x_2, predicted_vector_y_2, 2, linewidths=8, c='green', edgecolors='green',
 #             label=r'Possible coordinates for 2 next steps(1,0s)')
-# plt.scatter(predicted_vector_x_1, predicted_vector_y_1, 2, linewidths=8, c='red', edgecolors='red',
-#             label=r'Possible coordinates for 1 next step(0,5s)')
+# # plt.scatter(predicted_vector_x_1, predicted_vector_y_1, 2, linewidths=8, c='red', edgecolors='red',
+# #             label=r'Possible coordinates for 1 next step(0,5s)')
+#
+# plt.plot([x_0, x_t], [y_0, y_t])
+# plt.quiver(optimal_trajectory[0][0], optimal_trajectory[0][1], L * cos(optimal_trajectory[0][2]),
+#            L * sin(optimal_trajectory[0][2]))
+#
+# plt.quiver(optimal_trajectory[0][0].imag, optimal_trajectory[0][1].imag, L * cos(optimal_trajectory[0][2].imag),
+#            L * sin(optimal_trajectory[0][2].imag))
+#
+# plt.show()
+# Plotting
+# Generate vectors with coordinates for calculation of trajectory
+
 #
 # plt.legend(fontsize=15)  # legend(loc='upper left')
 # plt.title(
 #     r'$\varphi_0 = \pi/2' + ', ' + r'\beta_{max} = \pi /6' + ', ' + r'L = 0.5m' + ', ' +
 #     r'r = 0.05m' + ', ' + r'V_{max} = 1m/s$', fontsize=20)
 
-plt.show()
+# plt.show()

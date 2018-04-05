@@ -17,12 +17,12 @@ v_max = w_max * r  # 1 m/s
 
 # Initial conditions
 x_0 = 0
-y_0 = 3
+y_0 = 0
 coord_0 = [x_0, y_0]
 phi_0 = 0
 
 # Target
-x_t = 1
+x_t = 10
 y_t = 5
 coord_t = [x_t, y_t]
 phi_t = math.pi/2
