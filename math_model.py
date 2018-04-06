@@ -88,9 +88,7 @@ def control_criterion(predicted_coordinates):
     angle_from_line = (arctan(x_t / y_t) - predicted_coordinates[2])
     distance_from_target = get_distance_from_target(predicted_coordinates[0], predicted_coordinates[1])
     distance_from_line = get_distance_from_line(predicted_coordinates[0], predicted_coordinates[1])
-    print("Angle_crit = " + str(angle_from_line ** 2), "Line_crit = " + str(distance_from_line ** 2),
-          "Target_crit = " + str(distance_from_target ** 2))
-    return 10*distance_from_target ** 2 + 10 * angle_from_line ** 2 + 10 * distance_from_line ** 2
+    return 10000 * distance_from_target + 10 * angle_from_line ** 2 + 100 * distance_from_line ** 2
 
 
 # Integration
@@ -123,43 +121,55 @@ def iteration_of_predict(_global_coordinates, _v, _angle):
 
 initial_coordinates = [x, y, phi]
 
-size_mplt_1 = size(vector_beta) * size(vector_v)
-size_mplt_2 = pow(size_mplt_1, 2)
-size_mplt_3 = pow(size_mplt_1, 3)
+size_max_1 = size(vector_beta) * size(vector_v)
+size_max_2 = pow(size_max_1, 2)
+size_max_3 = pow(size_max_1, 3)
 
-global_coordinates = np.empty([size_mplt_3, 3], tuple)
+global_coordinates = np.empty([size_max_3, prediction_horizon], tuple)
+first_field_x = []
+first_field_y = []
 
+second_field_x = []
+second_field_y = []
+
+third_field_x = []
+third_field_y = []
 start = time.time()
 for i in range(prediction_horizon):
     if i == 0:
         j = 0
-        m = 0
-        while j < size_mplt_3:
+        while j < size_max_3:
             for velocity in vector_v:
                 for angle in vector_beta:
                     temp0 = iteration_of_predict(initial_coordinates, velocity, angle)
-                    for k in range(size_mplt_2):
+                    first_field_x.append(temp0[0])
+                    first_field_y.append(temp0[1])
+                    for k in range(size_max_2):
                         global_coordinates[j + k][0] = np.array(temp0)
-                    j += size_mplt_2
+                    j += size_max_2
         print("First layer done. Time = " + str(time.time() - start))
     elif i == 1:
         j = 0
         t += delta_t
-        while j < size_mplt_3:
+        while j < size_max_3:
             for velocity in vector_v:
                 for angle in vector_beta:
                     temp1 = iteration_of_predict(global_coordinates[j][0], velocity, angle)
-                    for k in range(size_mplt_1):
+                    second_field_x.append(temp1[0])
+                    second_field_y.append(temp1[1])
+                    for k in range(size_max_1):
                         global_coordinates[j + k][1] = np.array(temp1)
-                    j += size_mplt_1
+                    j += size_max_1
         print("Second layer done.Time = " + str(time.time() - start))
     elif i == 2:
         j = 0
         t += delta_t
-        while j < size_mplt_3:
+        while j < size_max_3:
             for velocity in vector_v:
                 for angle in vector_beta:
                     temp2 = iteration_of_predict(global_coordinates[j][1], velocity, angle)
+                    third_field_x.append(temp2[0])
+                    third_field_y.append(temp2[1])
                     global_coordinates[j][2] = np.array(temp2)
                     if control_criterion(temp2) < optimal_criterion:
                         optimal_trajectory.pop()
@@ -171,17 +181,89 @@ print("Optimal_criterion = " + str(optimal_criterion))
 print("Optimal trajectory = " + str(optimal_trajectory))
 
 plt.figure(1)
+plt.grid()
+plt.xlabel("Coordinate X")
+plt.ylabel("Coordinate Y")
+plt.title(r'$\beta_{max} = $' + str(beta_max) + '  ' + r'$\varphi_0 = $' + str(phi_0) + ' ')
+plt.scatter(third_field_x, third_field_y)
+plt.plot([x_0, optimal_trajectory[0][0][0], optimal_trajectory[0][1][0], optimal_trajectory[0][2][0]],
+         [y_0, optimal_trajectory[0][0][1], optimal_trajectory[0][1][1], optimal_trajectory[0][2][1]], 'r', linewidth=5)
+plt.plot([x_0, x_t], [y_0, y_t], 'g')
 
-ticks_x = np.arange(0, x_t + 0.1, 0.1)
-ticks_y = np.arange(0, y_t + 0.1, 0.1)
+plt.quiver(x_0, y_0, L * cos(phi_0), L * sin(phi_0), pivot='middle')
+plt.quiver(optimal_trajectory[0][0][0], optimal_trajectory[0][0][1], L * cos(optimal_trajectory[0][0][2]),
+           L * sin(optimal_trajectory[0][0][2]), pivot='middle')
 
-plt.xticks(ticks_x)
-plt.yticks(ticks_y)
+plt.quiver(optimal_trajectory[0][1][0], optimal_trajectory[0][1][1], L * cos(optimal_trajectory[0][1][2]),
+           L * sin(optimal_trajectory[0][1][2]), pivot='middle')
 
-# And a corresponding grid
-plt.grid(which='both')
+plt.quiver(optimal_trajectory[0][2][0], optimal_trajectory[0][2][1], L * cos(optimal_trajectory[0][2][2]),
+           L * sin(optimal_trajectory[0][2][2]), pivot='middle')
 
-plt.plot([x_0, x_t], [y_0, y_t])
+x = optimal_trajectory[0][2][0]
+y = optimal_trajectory[0][2][1]
+phi = optimal_trajectory[0][2][2]
+initial_coordinates = [x, y, phi]
+global_coordinates = np.empty([size_max_3, prediction_horizon], tuple)
+first_field_x = []
+first_field_y = []
+
+second_field_x = []
+second_field_y = []
+
+third_field_x = []
+third_field_y = []
+
+optimal_trajectory = [0]
+
+start = time.time()
+for i in range(prediction_horizon):
+    if i == 0:
+        j = 0
+        while j < size_max_3:
+            for velocity in vector_v:
+                for angle in vector_beta:
+                    temp0 = iteration_of_predict(initial_coordinates, velocity, angle)
+                    first_field_x.append(temp0[0])
+                    first_field_y.append(temp0[1])
+                    for k in range(size_max_2):
+                        global_coordinates[j + k][0] = np.array(temp0)
+                    j += size_max_2
+        print("First layer done. Time = " + str(time.time() - start))
+    elif i == 1:
+        j = 0
+        t += delta_t
+        while j < size_max_3:
+            for velocity in vector_v:
+                for angle in vector_beta:
+                    temp1 = iteration_of_predict(global_coordinates[j][0], velocity, angle)
+                    second_field_x.append(temp1[0])
+                    second_field_y.append(temp1[1])
+                    for k in range(size_max_1):
+                        global_coordinates[j + k][1] = np.array(temp1)
+                    j += size_max_1
+        print("Second layer done.Time = " + str(time.time() - start))
+    elif i == 2:
+        j = 0
+        t += delta_t
+        while j < size_max_3:
+            for velocity in vector_v:
+                for angle in vector_beta:
+                    temp2 = iteration_of_predict(global_coordinates[j][1], velocity, angle)
+                    third_field_x.append(temp2[0])
+                    third_field_y.append(temp2[1])
+                    global_coordinates[j][2] = np.array(temp2)
+                    if control_criterion(temp2) < optimal_criterion:
+                        optimal_trajectory.pop()
+                        optimal_trajectory.append(global_coordinates[j])
+                        optimal_criterion = control_criterion(temp2)
+                    j += 1
+        print("Third layer done.Time = " + str(time.time() - start))
+plt.scatter(third_field_x, third_field_y)
+plt.plot([x, optimal_trajectory[0][0][0], optimal_trajectory[0][1][0], optimal_trajectory[0][2][0]],
+         [y, optimal_trajectory[0][0][1], optimal_trajectory[0][1][1], optimal_trajectory[0][2][1]], 'r', linewidth=5)
+plt.plot([x_0, x_t], [y_0, y_t], 'g')
+
 plt.quiver(x_0, y_0, L * cos(phi_0), L * sin(phi_0), pivot='middle')
 plt.quiver(optimal_trajectory[0][0][0], optimal_trajectory[0][0][1], L * cos(optimal_trajectory[0][0][2]),
            L * sin(optimal_trajectory[0][0][2]), pivot='middle')
@@ -193,10 +275,3 @@ plt.quiver(optimal_trajectory[0][2][0], optimal_trajectory[0][2][1], L * cos(opt
            L * sin(optimal_trajectory[0][2][2]), pivot='middle')
 
 plt.show()
-
-# plt.legend(fontsize=15)  # legend(loc='upper left')
-# plt.title(
-#     r'$\varphi_0 = \pi/2' + ', ' + r'\beta_{mplt} = \pi /6' + ', ' + r'L = 0.5m' + ', ' +
-#     r'r = 0.05m' + ', ' + r'V_{mplt} = 1m/s$', fontsize=20)
-#
-# plt.show()
