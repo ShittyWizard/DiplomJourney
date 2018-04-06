@@ -5,6 +5,8 @@ import scipy.integrate as sp
 
 from config import phi_0, L, y_t, y_0, x_t, x_0, beta_max, v_max, eps, delta_t, delta_beta, delta_v
 
+np.set_printoptions(threshold=np.nan)
+
 # Actual
 beta = 0
 v = 0
@@ -21,12 +23,14 @@ prediction_horizon = 3
 # Generate vector from minimal possible velocity to maximum possible velocity
 vector_v = np.arange(v, v_max + delta_v, delta_v)
 vector_v = np.round(vector_v, 3)
-print(vector_v)
+print("Vector of velocities - " + str(vector_v))
+print()
 
 # Generate vector from minimal possible angle to maximum possible angle
 vector_beta = np.arange(-beta_max, beta_max + delta_beta, delta_beta)
 vector_beta = np.round(vector_beta, 3)
-print(vector_beta)
+print("Vector of beta angles - " + str(vector_beta))
+print()
 
 # Generate vectors with coordinates for plotting
 result_vector_x = [x]
@@ -144,7 +148,7 @@ initial_coordinates = [x, y, phi]
 # global_coordinates = [[[0 for n in range(3)] for m in range(3)] for p in
 #                       range((size(vector_beta) * size(vector_v)) ** 3)]
 # global_coordinates = [[[], ], ]
-global_coordinates = np.empty([(size(vector_beta) * size(vector_v)) ** 3, 3, 3])
+global_coordinates = np.empty([(size(vector_beta) * size(vector_v)) ** 3, 3], tuple)
 
 for i in range(prediction_horizon):
     if i == 0:
@@ -152,20 +156,21 @@ for i in range(prediction_horizon):
         for velocity in vector_v:
             for angle in vector_beta:
                 temp = iteration_of_predict_0(initial_coordinates, velocity, angle)
-                print(temp)
-                global_coordinates[j][0][0] = temp[0]
+                global_coordinates[j][0] = np.array(temp)
+                print(global_coordinates[j])
                 j += 1
+        print()
         print(global_coordinates)
         print("First layer done.")
-#     elif i == 1:
-#         j = 0
-#         t += delta_t
-#         for velocity in vector_v:
-#             for angle in vector_beta:
-#                 for coordinates in global_coordinates:
-#                     iteration_of_predict(coordinates, velocity, angle, j)
-#                     j += 1
-#         print("Second layer done.")
+    elif i == 1:
+        j = 0
+        t += delta_t
+        for velocity in vector_v:
+            for angle in vector_beta:
+                for coordinates in global_coordinates:
+                    iteration_of_predict_1(coordinates, velocity, angle)
+                    j += 1
+        print("Second layer done.")
 #     elif i == 2:
 #         j = 0
 #         t += delta_t
