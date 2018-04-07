@@ -124,11 +124,6 @@ plt.figure(1)
 plt.grid()
 plt.xlabel("Coordinate X")
 plt.ylabel("Coordinate Y")
-plt.title(r'$\beta_{max} = $' + str(beta_max) + '  ' + r'$\varphi_0 = $' + str(phi_0) + ' ')
-
-t = 0
-
-plt.plot([x_0, x_t], [y_0, y_t], 'b', linewidth=3)
 
 # Stack with coordinates for optimal trajectory
 optimal_trajectory = [0]
@@ -179,8 +174,6 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
                 for velocity in vector_v:
                     for angle in vector_beta:
                         temp1 = iteration_of_predict(global_coordinates[j][0], velocity, angle)
-                        second_field_x.append(temp1[0])
-                        second_field_y.append(temp1[1])
                         for k in range(size_max_1):
                             global_coordinates[j + k][1] = np.array(temp1)
                         j += size_max_1
@@ -204,7 +197,9 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
             print()
 
             plt.scatter(third_field_x, third_field_y,
-                        color='g', alpha=0.01)
+                        color='c', alpha=0.01)
+            plt.scatter(first_field_x, first_field_y,
+                        color='g', alpha=0.5)
 
             plt.quiver(_initial_x, _initial_y, L * cos(_initial_phi), L * sin(_initial_phi), pivot='middle')
             plt.quiver(optimal_trajectory[0][0][0], optimal_trajectory[0][0][1], L * cos(optimal_trajectory[0][0][2]),
@@ -235,17 +230,34 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
 
 n = 0
 while n < 1000:
+    t = 0
+    v = 0
     x_0 = random.uniform(-10, 10)
     y_0 = random.uniform(-10, 10)
     phi_0 = random.uniform(-math.pi, math.pi)
     x_t = random.uniform(x_0 - 10, x_0 + 10)
     y_t = random.uniform(y_0 - 10, y_0 + 10)
+    x = x_0
+    y = y_0
+    phi = phi_0
+    plt.figure(1)
+    plt.plot([x_0, x_t], [y_0, y_t], 'b', linewidth=2)
+    plt.title(r'$\beta_{max} = $' + str(beta_max) + '  ' + r'$\varphi_0 = $' + str(phi_0) + ' ')
+    fig = plt.figure(figsize=(11.69, 8.27))
+    plt.xlabel("Coordinate X")
+    plt.ylabel("Coordinate Y")
+    plt.grid()
+    # Stack with coordinates for optimal trajectory
+    optimal_trajectory = [0]
+    optimal_criterion = control_criterion([x_0, y_0, phi_0])
+
     n += 1
     p = 1
     coordinates = [x_0, y_0, phi_0, v, beta]
     k = 0
     x_previous = coordinates[0]
     y_previous = coordinates[1]
+    print([x_0, y_0, phi_0], [x_t, y_t])
     while not is_on_target(x, y, x_t, y_t):
         coordinates = predictive_control(x, y, phi, v, x_t, y_t)
         x = coordinates[0]
@@ -264,4 +276,5 @@ while n < 1000:
         p += 1
     plt.savefig(
         'x_0(' + str(x_0) + ') y_0(' + str(y_0) + ') phi_0(' + str(phi_0) + ') x_t(' + str(x_t) + ') y_t(' + str(
-            y_t) + ')')
+            y_t) + ').png')
+    plt.clf()
