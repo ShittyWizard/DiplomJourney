@@ -233,29 +233,35 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
     return [result_x, result_y, result_phi, result_v, result_beta]
 
 
-p = 1
-coordinates = [x_0, y_0, phi_0, v, beta]
-k = 0
-x_previous = coordinates[0]
-y_previous = coordinates[1]
-while not is_on_target(x, y, x_t, y_t):
-    coordinates = predictive_control(x, y, phi, v, x_t, y_t)
-    x = coordinates[0]
-    y = coordinates[1]
-    phi = coordinates[2]
-    v = coordinates[3]
-    beta = coordinates[4]
-    if x == x_previous and y == y_previous:
-        k += 1
-    if k == 2:
-        print("Recursive error")
-        break
-    x_previous = x
-    y_previous = y
-    print("Iteration number = " + str(p))
-    p += 1
-
-plt.plot(x_t, y_t, 'r', linewidth=eps)
-
-
-# plt.show()
+n = 0
+while n < 1000:
+    x_0 = random.uniform(-10, 10)
+    y_0 = random.uniform(-10, 10)
+    phi_0 = random.uniform(-math.pi, math.pi)
+    x_t = random.uniform(x_0 - 10, x_0 + 10)
+    y_t = random.uniform(y_0 - 10, y_0 + 10)
+    n += 1
+    p = 1
+    coordinates = [x_0, y_0, phi_0, v, beta]
+    k = 0
+    x_previous = coordinates[0]
+    y_previous = coordinates[1]
+    while not is_on_target(x, y, x_t, y_t):
+        coordinates = predictive_control(x, y, phi, v, x_t, y_t)
+        x = coordinates[0]
+        y = coordinates[1]
+        phi = coordinates[2]
+        v = coordinates[3]
+        beta = coordinates[4]
+        if x == x_previous and y == y_previous:
+            k += 1
+        if k == 2:
+            print("Recursive error")
+            break
+        x_previous = x
+        y_previous = y
+        print("Iteration number = " + str(p))
+        p += 1
+    plt.savefig(
+        'x_0(' + str(x_0) + ') y_0(' + str(y_0) + ') phi_0(' + str(phi_0) + ') x_t(' + str(x_t) + ') y_t(' + str(
+            y_t) + ')')
