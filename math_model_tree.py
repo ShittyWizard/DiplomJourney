@@ -60,11 +60,11 @@ def get_distance_from_target(x_a, y_a):
     return math.sqrt((x_t - x_a) ** 2 + (y_t - y_a) ** 2)
 
 
-def saturation(value, value_mplt):
-    if value > value_mplt:
-        value = value_mplt
-    elif value < -value_mplt:
-        value = -value_mplt
+def saturation(value, value_max):
+    if value > value_max:
+        value = value_max
+    elif value < -value_max:
+        value = -value_max
     return value
 
 
@@ -85,7 +85,7 @@ def control_criterion(predicted_coordinates):
     angle_from_line = (arctan(x_t / y_t) - predicted_coordinates[2])
     distance_from_target = get_distance_from_target(predicted_coordinates[0], predicted_coordinates[1])
     distance_from_line = get_distance_from_line(predicted_coordinates[0], predicted_coordinates[1])
-    return 10000 * distance_from_target + 10 * angle_from_line ** 2 + 100 * distance_from_line ** 2
+    return 100 * distance_from_target + 10 * angle_from_line ** 2 + 100 * distance_from_line ** 2
 
 
 # Integration
@@ -195,7 +195,7 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
             print("Absolute time = " + str(t))
             print()
 
-            plt.scatter(field_x, field_y, color='g', alpha=0.01)
+            plt.scatter(field_x, field_y, color='g')
 
             plt.quiver(_initial_x, _initial_y, L * cos(_initial_phi), L * sin(_initial_phi), pivot='middle')
             plt.quiver(optimal_trajectory[0][0][0], optimal_trajectory[0][0][1], L * cos(optimal_trajectory[0][0][2]),
@@ -218,7 +218,6 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
                 linewidth=4)
 
             print("Now I'm here - x : " + str(result_x) + ' y: ' + str(result_y))
-            time.sleep(2)
             print()
     return [result_x, result_y, result_phi, result_v, result_beta]
 
