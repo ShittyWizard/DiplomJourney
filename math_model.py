@@ -5,7 +5,6 @@ from scipy import *
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.integrate as sp
-
 from config import phi_0, L, y_t, y_0, x_t, x_0, beta_max, v_max, eps, delta_t, delta_beta, delta_v
 
 np.set_printoptions(threshold=np.nan)
@@ -131,7 +130,7 @@ t = 0
 plt.plot([x_0, x_t], [y_0, y_t], 'b', linewidth=3)
 
 # Stack with coordinates for optimal trajectory
-optimal_trajectory = [0]
+optimal_trajectory = [[[0]]]
 optimal_criterion = control_criterion([x_0, y_0, phi_0])
 
 
@@ -258,4 +257,4 @@ while not is_on_target(x, y, x_t, y_t):
 plt.plot(x_t, y_t, 'r', linewidth=eps)
 
 
-# plt.show()
+plt.show()
