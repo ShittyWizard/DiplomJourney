@@ -1,6 +1,5 @@
 import time
 
-from matplotlib.patches import Circle
 from scipy import *
 import matplotlib.pyplot as plt
 import numpy as np
@@ -255,6 +254,5 @@ while not is_on_target(x, y, x_t, y_t):
     p += 1
 
 plt.plot(x_t, y_t, 'r', linewidth=eps)
-
 
 plt.show()
