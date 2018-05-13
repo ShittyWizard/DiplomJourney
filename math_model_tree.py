@@ -85,7 +85,7 @@ def control_criterion(predicted_coordinates):
     angle_from_line = (arctan(x_t / y_t) - predicted_coordinates[2])
     distance_from_target = get_distance_from_target(predicted_coordinates[0], predicted_coordinates[1])
     distance_from_line = get_distance_from_line(predicted_coordinates[0], predicted_coordinates[1])
-    return 100 * distance_from_target + 10 * angle_from_line ** 2 + 100 * distance_from_line ** 2
+    return 1000 * distance_from_target + 10 * angle_from_line ** 2 + 10 * distance_from_line ** 2
 
 
 # Integration
@@ -195,7 +195,7 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
             print("Absolute time = " + str(t))
             print()
 
-            plt.scatter(field_x, field_y, color='g')
+            plt.scatter(field_x, field_y, color='g', alpha=0.3)
 
             plt.quiver(_initial_x, _initial_y, L * cos(_initial_phi), L * sin(_initial_phi), pivot='middle')
             plt.quiver(optimal_trajectory[0][0][0], optimal_trajectory[0][0][1], L * cos(optimal_trajectory[0][0][2]),
@@ -207,17 +207,25 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
             plt.quiver(optimal_trajectory[0][2][0], optimal_trajectory[0][2][1], L * cos(optimal_trajectory[0][2][2]),
                        L * sin(optimal_trajectory[0][2][2]), pivot='middle', alpha=0.2)
 
-            result_x = optimal_trajectory[0][2][0]
-            result_y = optimal_trajectory[0][2][1]
-            result_phi = optimal_trajectory[0][2][2]
+            result_trajectory_x = [optimal_trajectory[0][0][0], optimal_trajectory[0][1][0],
+                                   optimal_trajectory[0][2][0]]
+            result_trajectory_y = [optimal_trajectory[0][0][1], optimal_trajectory[0][1][1],
+                                   optimal_trajectory[0][2][1]]
+            result_trajectory_phi = [optimal_trajectory[0][0][2], optimal_trajectory[0][1][2],
+                                     optimal_trajectory[0][2][2]]
+
+            result_x = result_trajectory_x[2]
+            result_y = result_trajectory_y[2]
+            result_phi = result_trajectory_phi[2]
 
             plt.plot(
-                [_initial_x, result_x],
-                [_initial_y, result_y],
+                [_initial_x, result_trajectory_x[1], result_trajectory_x[2]],
+                [_initial_y, result_trajectory_y[1], result_trajectory_y[2]],
                 'r',
-                linewidth=4)
+                linewidth=3)
 
             print("Now I'm here - x : " + str(result_x) + ' y: ' + str(result_y))
+            print("Distance from line: " + str(get_distance_from_line(result_x, result_y)))
             print()
     return [result_x, result_y, result_phi, result_v, result_beta]
 
@@ -243,7 +251,5 @@ while not is_on_target(x, y, x_t, y_t):
     y_previous = y
     print("Iteration number = " + str(p))
     p += 1
-
-plt.plot(x_t, y_t, 'r', linewidth=eps)
 
 plt.show()
