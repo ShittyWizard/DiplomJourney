@@ -4,7 +4,6 @@ from scipy import *
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.integrate as sp
-
 from config import phi_0, L, y_t, y_0, x_t, x_0, beta_max, v_max, eps, delta_t, delta_beta, delta_v
 
 np.set_printoptions(threshold=np.nan)

@@ -20,6 +20,6 @@ y_0 = 0
 phi_0 = math.pi
 
 # Target
-x_t = 10
+x_t = 2
 y_t = 2
-phi_t = math.pi / 2
+
