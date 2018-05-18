@@ -41,9 +41,9 @@ result_vector_phi = [phi]
 
 def is_on_target(actual_x, actual_y, target_x, target_y):
     if (target_x - actual_x) ** 2 + (target_y - actual_y) ** 2 <= eps:
-        return True
+        return [True, (target_x - actual_x) ** 2 + (target_y - actual_y) ** 2]
     else:
-        return False
+        return [False, (target_x - actual_x) ** 2 + (target_y - actual_y) ** 2]
 
 
 # Function for getting distance from robot's actual position to line from initial position to target
@@ -132,17 +132,20 @@ plt.plot([x_0, x_t], [y_0, y_t], 'b', linewidth=3)
 
 # Stack with coordinates for optimal trajectory
 optimal_trajectory = [0]
+result_trajectory_x = [x_0]
+result_trajectory_y = [y_0]
+result_trajectory_phi = [phi_0]
 optimal_criterion = control_criterion([x_0, y_0, phi_0])
 result_v = 0
 result_beta = 0
+m = 0  # For optimizing finishing
 
 
 def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, _target_x, _target_y):
-    global optimal_trajectory
-    global optimal_criterion
-    global t
-    global result_v
-    global result_beta
+    global optimal_trajectory, optimal_criterion
+    global result_trajectory_x, result_trajectory_y, result_trajectory_phi
+    global t, m
+    global result_v, result_beta
 
     initial_coordinates = [_initial_x, _initial_y, _initial_phi]
     global_coordinates = CoordinateTree(size_max_1)
@@ -187,7 +190,6 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
                         optimal_trajectory.append([global_coordinates[global_coordinates.get_index_of_parent(j)[1]],
                                                    global_coordinates[global_coordinates.get_index_of_parent(j)[0]],
                                                    global_coordinates[j]])
-                        print(str(optimal_trajectory))
                         result_v = velocity
                         result_beta = angle
                         optimal_criterion = control_criterion(temp2)
@@ -196,28 +198,38 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
             print("Absolute time = " + str(t))
             print()
 
-            result_trajectory_x = [optimal_trajectory[0][0][0], optimal_trajectory[0][1][0],
-                                   optimal_trajectory[0][2][0]]
-            result_trajectory_y = [optimal_trajectory[0][0][1], optimal_trajectory[0][1][1],
-                                   optimal_trajectory[0][2][1]]
-            result_trajectory_phi = [optimal_trajectory[0][0][2], optimal_trajectory[0][1][2],
-                                     optimal_trajectory[0][2][2]]
+            predicted_trajectory_x = [optimal_trajectory[0][0][0], optimal_trajectory[0][1][0],
+                                      optimal_trajectory[0][2][0]]
+            predicted_trajectory_y = [optimal_trajectory[0][0][1], optimal_trajectory[0][1][1],
+                                      optimal_trajectory[0][2][1]]
+            predicted_trajectory_phi = [optimal_trajectory[0][0][2], optimal_trajectory[0][1][2],
+                                        optimal_trajectory[0][2][2]]
+
+            result_x = predicted_trajectory_x[0]
+            result_y = predicted_trajectory_y[0]
+            result_phi = predicted_trajectory_phi[0]
+
+            if is_on_target(predicted_trajectory_x[1], predicted_trajectory_y[1], x_t, y_t)[0] and m == 1:
+                print("Predicted trajectory is in target! x2")
+                result_x = predicted_trajectory_x[1]
+                result_y = predicted_trajectory_y[1]
+                result_phi = predicted_trajectory_phi[1]
+                print("Distance from target: " + str(
+                    is_on_target(predicted_trajectory_x[1], predicted_trajectory_y[1], x_t, y_t)[1]))
+            elif is_on_target(predicted_trajectory_x[2], predicted_trajectory_y[2], x_t, y_t)[0]:
+                print("Predicted trajectory is in target! x1")
+                result_x = predicted_trajectory_x[1]
+                result_y = predicted_trajectory_y[1]
+                result_phi = predicted_trajectory_phi[1]
+                m += 1
+                print("Distance from target: " + str(
+                    is_on_target(predicted_trajectory_x[2], predicted_trajectory_y[2], x_t, y_t)[1]))
 
             plt.scatter(field_x, field_y, color='g', alpha=0.3)
 
-            plt.quiver(result_trajectory_x[0], result_trajectory_y[0], L * cos(result_trajectory_phi[0]),
-                       L * sin(result_trajectory_phi[0]), pivot='middle', alpha=0.2)
-
-            plt.quiver(result_trajectory_x[1], result_trajectory_y[1], L * cos(result_trajectory_phi[1]),
-                       L * sin(result_trajectory_phi[1]), pivot='middle', alpha=0.2)
-
-            plt.quiver(result_trajectory_x[2], result_trajectory_y[2], L * cos(result_trajectory_phi[2]),
-                       L * sin(result_trajectory_phi[2]), pivot='middle', alpha=0.2)
-
-            result_x = result_trajectory_x[0]
-            result_y = result_trajectory_y[0]
-            result_phi = result_trajectory_phi[0]
-
+            result_trajectory_x.append(result_x)
+            result_trajectory_y.append(result_y)
+            result_trajectory_phi.append(result_beta)
             print("Now I'm here - x : " + str(result_x) + ' y: ' + str(result_y))
             print("Distance from line: " + str(get_distance_from_line(result_x, result_y)))
             print()
@@ -229,7 +241,7 @@ coordinates = [x_0, y_0, phi_0, v, beta]
 k = 0
 x_previous = coordinates[0]
 y_previous = coordinates[1]
-while not is_on_target(x, y, x_t, y_t):
+while not is_on_target(x, y, x_t, y_t)[0]:
     coordinates = predictive_control(x, y, phi, v, x_t, y_t)
     x = coordinates[0]
     y = coordinates[1]
@@ -245,5 +257,6 @@ while not is_on_target(x, y, x_t, y_t):
     y_previous = y
     print("Iteration number = " + str(p))
     p += 1
-
+plt.plot(result_trajectory_x, result_trajectory_y, 'r', linewidth=3.0)
+plt.plot(result_trajectory_x, result_trajectory_y, 'ro')
 plt.show()
