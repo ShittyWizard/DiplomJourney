@@ -136,16 +136,22 @@ plt.plot([x_0, x_t], [y_0, y_t], 'b', linewidth=3)
 
 # Stack with coordinates for optimal trajectory
 optimal_trajectory = [0]
-result_trajectory = [[x_0, y_0, phi_0]]
+result_trajectory_x = [x_0]
+result_trajectory_y = [y_0]
+result_trajectory_phi = [phi_0]
 optimal_criterion = control_criterion([x_0, y_0, phi_0])
 result_v = 0
 result_beta = 0
+m = 0  # Need to good finishing
 
 
 def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, _target_x, _target_y):
     global optimal_trajectory
+    global result_trajectory_x
+    global result_trajectory_y
+    global result_trajectory_phi
     global optimal_criterion
-    global t
+    global t, m
     global result_v
     global result_beta
 
@@ -158,7 +164,9 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
     field_x = []
     field_y = []
     t += delta_t
+
     start = time.time()
+
     for i in range(prediction_horizon):
         if i == 0:
             j = 0
@@ -203,42 +211,58 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
                                  global_coordinates[j]])
                             optimal_criterion = control_criterion(temp2)
                         j += 1
-            print("Third layer done.Time = " + str(time.time() - start))
-            print("Absolute time = " + str(t))
-            print()
+        print("Third layer done.Time = " + str(time.time() - start))
+        print("Absolute time = " + str(t))
+        print()
 
-            result_trajectory_x = [optimal_trajectory[0][0][0], optimal_trajectory[0][1][0],
-                                   optimal_trajectory[0][2][0]]
-            result_trajectory_y = [optimal_trajectory[0][0][1], optimal_trajectory[0][1][1],
-                                   optimal_trajectory[0][2][1]]
-            result_trajectory_phi = [optimal_trajectory[0][0][2], optimal_trajectory[0][1][2],
-                                     optimal_trajectory[0][2][2]]
+    predicted_trajectory_x = [optimal_trajectory[0][0][0], optimal_trajectory[0][1][0],
+                              optimal_trajectory[0][2][0]]
+    predicted_trajectory_y = [optimal_trajectory[0][0][1], optimal_trajectory[0][1][1],
+                              optimal_trajectory[0][2][1]]
+    predicted_trajectory_phi = [optimal_trajectory[0][0][2], optimal_trajectory[0][1][2],
+                                optimal_trajectory[0][2][2]]
 
-            print("Result trajectory of X: " + str(result_trajectory_x))
-            print("Result trajectory of Y: " + str(result_trajectory_y))
-            print("Result trajectory of PHI: " + str(result_trajectory_phi))
+    print("Result trajectory of X: " + str(predicted_trajectory_x))
+    print("Result trajectory of Y: " + str(predicted_trajectory_y))
+    print("Result trajectory of PHI: " + str(predicted_trajectory_phi))
 
-            result_x = result_trajectory_x[0]
-            result_y = result_trajectory_y[0]
-            result_phi = result_trajectory_phi[0]
-            result_v = optimal_trajectory[0][0][3]
-            result_beta = optimal_trajectory[0][0][4]
+    result_x = predicted_trajectory_x[0]
+    result_y = predicted_trajectory_y[0]
+    result_phi = predicted_trajectory_phi[0]
+    result_v = optimal_trajectory[0][0][3]
+    result_beta = optimal_trajectory[0][0][4]
 
-            print("Now I'm here - x : " + str(result_x) + ' y: ' + str(result_y))
-            print("Distance from line: " + str(get_distance_from_line(result_x, result_y)))
-            print()
+    print("Now I'm here - x : " + str(result_x) + ' y: ' + str(result_y))
+    print("Distance from line: " + str(get_distance_from_line(result_x, result_y)))
+    print()
 
-            plt.scatter(field_x, field_y, color='g', alpha=0.3)
+    if is_on_target(predicted_trajectory_x[2], predicted_trajectory_y[2], x_t, y_t):
+        print("Predicted trajectory is in target!")
+        result_x = predicted_trajectory_x[1]
+        result_y = predicted_trajectory_y[1]
+        result_phi = predicted_trajectory_phi[1]
+        m += 1
+    elif is_on_target(predicted_trajectory_x[1], predicted_trajectory_y[1], x_t, y_t) and m == 1:
+        print("Predicted trajectory is in target!")
+        result_x = predicted_trajectory_x[1]
+        result_y = predicted_trajectory_y[1]
+        result_phi = predicted_trajectory_phi[1]
 
-            plt.quiver(_initial_x, _initial_y, L * cos(_initial_phi), L * sin(_initial_phi), pivot='middle')
-            plt.quiver(optimal_trajectory[0][0][0], optimal_trajectory[0][0][1], L * cos(optimal_trajectory[0][0][2]),
-                       L * sin(optimal_trajectory[0][0][2]), pivot='middle', alpha=0.2)
+    result_trajectory_x.append(result_x)
+    result_trajectory_y.append(result_y)
+    result_trajectory_phi.append(result_beta)
 
-            plt.quiver(optimal_trajectory[0][1][0], optimal_trajectory[0][1][1], L * cos(optimal_trajectory[0][1][2]),
-                       L * sin(optimal_trajectory[0][1][2]), pivot='middle', alpha=0.2)
+    plt.scatter(field_x, field_y, color='g', alpha=0.3)
 
-            plt.quiver(optimal_trajectory[0][2][0], optimal_trajectory[0][2][1], L * cos(optimal_trajectory[0][2][2]),
-                       L * sin(optimal_trajectory[0][2][2]), pivot='middle', alpha=0.2)
+    plt.quiver(_initial_x, _initial_y, L * cos(_initial_phi), L * sin(_initial_phi), pivot='middle')
+    plt.quiver(optimal_trajectory[0][0][0], optimal_trajectory[0][0][1], L * cos(optimal_trajectory[0][0][4]),
+               L * sin(optimal_trajectory[0][0][4]), pivot='middle', alpha=0.2)
+
+    plt.quiver(optimal_trajectory[0][1][0], optimal_trajectory[0][1][1], L * cos(optimal_trajectory[0][1][4]),
+               L * sin(optimal_trajectory[0][1][4]), pivot='middle', alpha=0.2)
+
+    plt.quiver(optimal_trajectory[0][2][0], optimal_trajectory[0][2][1], L * cos(optimal_trajectory[0][2][4]),
+               L * sin(optimal_trajectory[0][2][4]), pivot='middle', alpha=0.2)
 
     return [result_x, result_y, result_phi, result_v, result_beta]
 
@@ -248,6 +272,7 @@ coordinates = [x_0, y_0, phi_0, v, beta]
 k = 0
 x_previous = coordinates[0]
 y_previous = coordinates[1]
+
 while not is_on_target(x, y, x_t, y_t):
     coordinates = predictive_control(x, y, phi, v, x_t, y_t)
     x = coordinates[0]
@@ -264,6 +289,8 @@ while not is_on_target(x, y, x_t, y_t):
     y_previous = y
     print("Iteration number = " + str(p))
     p += 1
+
+plt.plot(result_trajectory_x, result_trajectory_y, 'r')
 print("Size_max_1: " + str(size_max_1))
 print("Size_max_2: " + str(size_max_2))
 print("Size_max_3: " + str(size_max_3))

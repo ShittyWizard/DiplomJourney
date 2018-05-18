@@ -116,9 +116,9 @@ def iteration_of_predict(_global_coordinates, _v, _angle):
     return [_global_coordinates[0] + _x, _global_coordinates[1] + _y, _global_coordinates[2] + _phi]
 
 
-size_max_1 = size(vector_beta) * size(vector_v)
-size_max_2 = pow(size_max_1, 2)
-size_max_3 = pow(size_max_1, 3)
+len_of_angles = size(vector_beta) * size(vector_v)
+size_max_2 = pow(len_of_angles, 2)
+size_max_3 = pow(len_of_angles, 3)
 
 plt.figure(1)
 plt.grid()
