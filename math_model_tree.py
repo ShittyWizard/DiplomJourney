@@ -120,6 +120,10 @@ size_max_1 = size(vector_beta) * size(vector_v)
 size_max_2 = pow(size_max_1, 2)
 size_max_3 = pow(size_max_1, 3)
 
+print("Size_max_1: " + str(size_max_1))
+print("Size_max_2: " + str(size_max_2))
+print("Size_max_3: " + str(size_max_3))
+
 plt.figure(1)
 plt.grid()
 plt.xlabel("Coordinate X")
@@ -132,6 +136,7 @@ plt.plot([x_0, x_t], [y_0, y_t], 'b', linewidth=3)
 
 # Stack with coordinates for optimal trajectory
 optimal_trajectory = [0]
+result_trajectory = [[x_0, y_0, phi_0]]
 optimal_criterion = control_criterion([x_0, y_0, phi_0])
 result_v = 0
 result_beta = 0
@@ -160,39 +165,67 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
             for velocity in vector_v:
                 for angle in vector_beta:
                     temp0 = iteration_of_predict(initial_coordinates, velocity, angle)
+                    temp0.append(velocity)
+                    temp0.append(angle)
                     global_coordinates[j] = temp0
                     j += 1
             print("First layer done. Time = " + str(time.time() - start))
         elif i == 1:
             j = size_max_1
-            for velocity in vector_v:
-                for angle in vector_beta:
-                    temp1 = iteration_of_predict(global_coordinates[(j - size_max_1) // size_max_1],
-                                                 velocity, angle)
-                    global_coordinates[j] = temp1
-                j += 1
+            while j < (size_max_1 + size_max_2):
+                for velocity in vector_v:
+                    for angle in vector_beta:
+                        temp1 = iteration_of_predict(global_coordinates[(j - size_max_1) % size_max_1],
+                                                     velocity, angle)
+                        temp1.append(velocity)
+                        temp1.append(angle)
+                        global_coordinates[j] = temp1
+                        j += 1
             print("Second layer done.Time = " + str(time.time() - start))
         elif i == 2:
             j = size_max_1 + size_max_2
-            for velocity in vector_v:
-                for angle in vector_beta:
-                    temp2 = iteration_of_predict(
-                        global_coordinates[size_max_1 + ((j - (size_max_1 + size_max_2)) // size_max_1)],
-                        velocity, angle)
-                    global_coordinates[j] = temp2
-                    field_x.append(temp2[0])
-                    field_y.append(temp2[1])
-                    if control_criterion(temp2) < optimal_criterion:
-                        optimal_trajectory.pop()
-                        optimal_trajectory.append([global_coordinates[global_coordinates.get_index_of_parent(j)[1]],
-                                                   global_coordinates[global_coordinates.get_index_of_parent(j)[0]],
-                                                   global_coordinates[j]])
-                        result_v = velocity
-                        result_beta = angle
-                        optimal_criterion = control_criterion(temp2)
-                    j += 1
+            while j < (size_max_1 + size_max_2 + size_max_3):
+                for velocity in vector_v:
+                    for angle in vector_beta:
+                        temp2 = iteration_of_predict(
+                            global_coordinates[size_max_1 + ((j - (size_max_1 + size_max_2)) % size_max_1)],
+                            velocity, angle)
+                        temp2.append(velocity)
+                        temp2.append(angle)
+                        global_coordinates[j] = temp2
+                        field_x.append(temp2[0])
+                        field_y.append(temp2[1])
+                        if control_criterion(temp2) < optimal_criterion:
+                            optimal_trajectory.pop()
+                            optimal_trajectory.append(
+                                [global_coordinates[global_coordinates.get_index_of_grandparent(j)],
+                                 global_coordinates[global_coordinates.get_index_of_parent(j)],
+                                 global_coordinates[j]])
+                            optimal_criterion = control_criterion(temp2)
+                        j += 1
             print("Third layer done.Time = " + str(time.time() - start))
             print("Absolute time = " + str(t))
+            print()
+
+            result_trajectory_x = [optimal_trajectory[0][0][0], optimal_trajectory[0][1][0],
+                                   optimal_trajectory[0][2][0]]
+            result_trajectory_y = [optimal_trajectory[0][0][1], optimal_trajectory[0][1][1],
+                                   optimal_trajectory[0][2][1]]
+            result_trajectory_phi = [optimal_trajectory[0][0][2], optimal_trajectory[0][1][2],
+                                     optimal_trajectory[0][2][2]]
+
+            print("Result trajectory of X: " + str(result_trajectory_x))
+            print("Result trajectory of Y: " + str(result_trajectory_y))
+            print("Result trajectory of PHI: " + str(result_trajectory_phi))
+
+            result_x = result_trajectory_x[0]
+            result_y = result_trajectory_y[0]
+            result_phi = result_trajectory_phi[0]
+            result_v = optimal_trajectory[0][0][3]
+            result_beta = optimal_trajectory[0][0][4]
+
+            print("Now I'm here - x : " + str(result_x) + ' y: ' + str(result_y))
+            print("Distance from line: " + str(get_distance_from_line(result_x, result_y)))
             print()
 
             plt.scatter(field_x, field_y, color='g', alpha=0.3)
@@ -207,26 +240,6 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
             plt.quiver(optimal_trajectory[0][2][0], optimal_trajectory[0][2][1], L * cos(optimal_trajectory[0][2][2]),
                        L * sin(optimal_trajectory[0][2][2]), pivot='middle', alpha=0.2)
 
-            result_trajectory_x = [optimal_trajectory[0][0][0], optimal_trajectory[0][1][0],
-                                   optimal_trajectory[0][2][0]]
-            result_trajectory_y = [optimal_trajectory[0][0][1], optimal_trajectory[0][1][1],
-                                   optimal_trajectory[0][2][1]]
-            result_trajectory_phi = [optimal_trajectory[0][0][2], optimal_trajectory[0][1][2],
-                                     optimal_trajectory[0][2][2]]
-
-            result_x = result_trajectory_x[2]
-            result_y = result_trajectory_y[2]
-            result_phi = result_trajectory_phi[2]
-
-            plt.plot(
-                [_initial_x, result_trajectory_x[1], result_trajectory_x[2]],
-                [_initial_y, result_trajectory_y[1], result_trajectory_y[2]],
-                'r',
-                linewidth=3)
-
-            print("Now I'm here - x : " + str(result_x) + ' y: ' + str(result_y))
-            print("Distance from line: " + str(get_distance_from_line(result_x, result_y)))
-            print()
     return [result_x, result_y, result_phi, result_v, result_beta]
 
 
@@ -251,5 +264,7 @@ while not is_on_target(x, y, x_t, y_t):
     y_previous = y
     print("Iteration number = " + str(p))
     p += 1
-
+print("Size_max_1: " + str(size_max_1))
+print("Size_max_2: " + str(size_max_2))
+print("Size_max_3: " + str(size_max_3))
 plt.show()

@@ -22,12 +22,19 @@ class CoordinateTree:
             index_of_parent = index_of_element
             return index_of_parent
         elif self.size_1 <= index_of_element < (self.size_1 + self.size_2):
-            index_of_parent = (index_of_element - self.size_1) // self.size_1
+            index_of_parent = (index_of_element - self.size_1) % self.size_1
             return index_of_parent
         else:
-            index_of_parent = self.size_1 + ((index_of_element - self.size_1 - self.size_2) // self.size_1)
+            index_of_parent = self.size_1 + ((index_of_element - self.size_1 - self.size_2) % self.size_1)
             # Return array with index of parent and index of grand-parent
-            return [index_of_parent, self.get_index_of_parent(index_of_parent)]
+            return index_of_parent
+
+    def get_index_of_grandparent(self, index_of_element):
+        if index_of_element < (self.size_1 + self.size_2):
+            print("It has not grandparents")
+        else:
+            index_of_grandparent = self.get_index_of_parent(self.get_index_of_parent(index_of_element))
+            return index_of_grandparent
 
     def get_size(self):
         return self.size_1 + pow(self.size_1, 2) + pow(self.size_1, 3)
