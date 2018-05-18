@@ -159,9 +159,6 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
     initial_coordinates = [_initial_x, _initial_y, _initial_phi]
     global_coordinates = CoordinateTree(size_max_1)
 
-    result_x = 0
-    result_y = 0
-    result_phi = 0
     field_x = []
     field_y = []
     t += delta_t
@@ -223,10 +220,6 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
     predicted_trajectory_phi = [optimal_trajectory[0][0][2], optimal_trajectory[0][1][2],
                                 optimal_trajectory[0][2][2]]
 
-    print("Result trajectory of X: " + str(predicted_trajectory_x))
-    print("Result trajectory of Y: " + str(predicted_trajectory_y))
-    print("Result trajectory of PHI: " + str(predicted_trajectory_phi))
-
     result_x = predicted_trajectory_x[0]
     result_y = predicted_trajectory_y[0]
     result_phi = predicted_trajectory_phi[0]
@@ -238,13 +231,13 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
     print()
 
     if is_on_target(predicted_trajectory_x[2], predicted_trajectory_y[2], x_t, y_t):
-        print("Predicted trajectory is in target!")
+        print("Predicted trajectory is in target! x1")
         result_x = predicted_trajectory_x[1]
         result_y = predicted_trajectory_y[1]
         result_phi = predicted_trajectory_phi[1]
         m += 1
     elif is_on_target(predicted_trajectory_x[1], predicted_trajectory_y[1], x_t, y_t) and m == 1:
-        print("Predicted trajectory is in target!")
+        print("Predicted trajectory is in target! x2")
         result_x = predicted_trajectory_x[1]
         result_y = predicted_trajectory_y[1]
         result_phi = predicted_trajectory_phi[1]
@@ -345,14 +338,14 @@ def predictive_control_optimized(_initial_x, _initial_y, _initial_phi, _initial_
     print()
 
     if is_on_target(predicted_trajectory_x[2], predicted_trajectory_y[2], x_t, y_t):
-        print("Predicted trajectory is in target!")
+        print("Predicted trajectory is in target! x1")
         result_x = predicted_trajectory_x[1]
         result_y = predicted_trajectory_y[1]
         result_phi = predicted_trajectory_phi[1]
         # plt.quiver(result_x, result_y, L * cos(result_phi), L * sin(result_phi), pivot='middle')
         m += 1
     elif is_on_target(predicted_trajectory_x[1], predicted_trajectory_y[1], x_t, y_t) and m == 1:
-        print("Predicted trajectory is in target!")
+        print("Predicted trajectory is in target! x2")
         result_x = predicted_trajectory_x[1]
         result_y = predicted_trajectory_y[1]
         result_phi = predicted_trajectory_phi[1]
@@ -362,7 +355,7 @@ def predictive_control_optimized(_initial_x, _initial_y, _initial_phi, _initial_
     result_trajectory_y.append(result_y)
     result_trajectory_phi.append(result_beta)
 
-    plt.scatter(field_x, field_y, color='g', alpha=0.3)
+    # plt.scatter(field_x, field_y, color='g', alpha=0.3)
 
     # plt.quiver(_initial_x, _initial_y, L * cos(_initial_phi), L * sin(_initial_phi), pivot='middle')
 
