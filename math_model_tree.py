@@ -167,7 +167,7 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
             j = size_max_1
             for velocity in vector_v:
                 for angle in vector_beta:
-                    temp1 = iteration_of_predict(global_coordinates[(j - size_max_1) // size_max_1],
+                    temp1 = iteration_of_predict(global_coordinates[(j - size_max_1) % size_max_1],
                                                  velocity, angle)
                     global_coordinates[j] = temp1
                     j += 1
@@ -177,7 +177,7 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
             for velocity in vector_v:
                 for angle in vector_beta:
                     temp2 = iteration_of_predict(
-                        global_coordinates[size_max_1 + ((j - (size_max_1 + size_max_2)) // size_max_1)],
+                        global_coordinates[size_max_1 + ((j - (size_max_1 + size_max_2)) % size_max_1)],
                         velocity, angle)
                     global_coordinates[j] = temp2
                     field_x.append(temp2[0])
@@ -187,6 +187,7 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
                         optimal_trajectory.append([global_coordinates[global_coordinates.get_index_of_parent(j)[1]],
                                                    global_coordinates[global_coordinates.get_index_of_parent(j)[0]],
                                                    global_coordinates[j]])
+                        print(str(optimal_trajectory))
                         result_v = velocity
                         result_beta = angle
                         optimal_criterion = control_criterion(temp2)
@@ -214,9 +215,9 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
             result_trajectory_phi = [optimal_trajectory[0][0][2], optimal_trajectory[0][1][2],
                                      optimal_trajectory[0][2][2]]
 
-            result_x = result_trajectory_x[2]
-            result_y = result_trajectory_y[2]
-            result_phi = result_trajectory_phi[2]
+            result_x = result_trajectory_x[0]
+            result_y = result_trajectory_y[0]
+            result_phi = result_trajectory_phi[0]
 
             plt.plot(
                 [_initial_x, result_trajectory_x[1], result_trajectory_x[2]],
