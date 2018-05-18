@@ -7,9 +7,9 @@ L = 0.5
 
 
 # Constraints
-delta_t = 0.5
-delta_v = 0.4
-delta_beta = math.pi / 12
+delta_t = 0.2
+delta_v = 0.2
+delta_beta = math.pi / 24
 beta_max = math.pi / 3
 v_max = 1
 

@@ -6,6 +6,7 @@ import numpy as np
 import scipy.integrate as sp
 
 from CoordinateTree import CoordinateTree
+from OptimizedCoordinateTree import OptimizedCoordinateTree
 from config import phi_0, L, y_t, y_0, x_t, x_0, beta_max, v_max, eps, delta_t, delta_beta, delta_v
 
 np.set_printoptions(threshold=np.nan)
@@ -22,7 +23,7 @@ coord_actual = [x, y]
 prediction_horizon = 3
 
 # Generate vector from minimal possible velocity to maximum possible velocity
-vector_v = np.arange(v, v_max + delta_v, delta_v)
+vector_v = np.arange(v, v_max + 0.01, delta_v)
 vector_v = np.round(vector_v, 3)
 print("Vector of velocities - " + str(vector_v))
 print()
@@ -211,9 +212,9 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
                                  global_coordinates[j]])
                             optimal_criterion = control_criterion(temp2)
                         j += 1
-        print("Third layer done.Time = " + str(time.time() - start))
-        print("Absolute time = " + str(t))
-        print()
+            print("Third layer done.Time = " + str(time.time() - start))
+            print("Absolute time = " + str(t))
+            print()
 
     predicted_trajectory_x = [optimal_trajectory[0][0][0], optimal_trajectory[0][1][0],
                               optimal_trajectory[0][2][0]]
@@ -254,15 +255,116 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
 
     plt.scatter(field_x, field_y, color='g', alpha=0.3)
 
-    plt.quiver(_initial_x, _initial_y, L * cos(_initial_phi), L * sin(_initial_phi), pivot='middle')
-    plt.quiver(optimal_trajectory[0][0][0], optimal_trajectory[0][0][1], L * cos(optimal_trajectory[0][0][4]),
-               L * sin(optimal_trajectory[0][0][4]), pivot='middle', alpha=0.2)
+    return [result_x, result_y, result_phi, result_v, result_beta]
 
-    plt.quiver(optimal_trajectory[0][1][0], optimal_trajectory[0][1][1], L * cos(optimal_trajectory[0][1][4]),
-               L * sin(optimal_trajectory[0][1][4]), pivot='middle', alpha=0.2)
 
-    plt.quiver(optimal_trajectory[0][2][0], optimal_trajectory[0][2][1], L * cos(optimal_trajectory[0][2][4]),
-               L * sin(optimal_trajectory[0][2][4]), pivot='middle', alpha=0.2)
+def predictive_control_optimized(_initial_x, _initial_y, _initial_phi, _initial_velocity, _target_x, _target_y):
+    global optimal_trajectory
+    global result_trajectory_x
+    global result_trajectory_y
+    global result_trajectory_phi
+    global optimal_criterion
+    global t, m
+    global result_v
+    global result_beta
+
+    initial_coordinates = [_initial_x, _initial_y, _initial_phi]
+    global_coordinates = OptimizedCoordinateTree(len(vector_beta))
+
+    field_x = []
+    field_y = []
+    t += delta_t
+
+    start = time.time()
+
+    for i in range(prediction_horizon):
+        if i == 0:
+            j = 0
+            velocity = vector_v.max()
+            for angle in vector_beta:
+                temp0 = iteration_of_predict(initial_coordinates, velocity, angle)
+                temp0.append(velocity)
+                temp0.append(angle)
+                global_coordinates[j] = temp0
+                j += 1
+            print("First layer done. Time = " + str(time.time() - start))
+        elif i == 1:
+            j = global_coordinates.size_1
+            velocity = vector_v.max()
+            while j < (global_coordinates.size_1 + global_coordinates.size_2):
+                for angle in vector_beta:
+                    temp1 = iteration_of_predict(
+                        global_coordinates[(j - global_coordinates.size_1) % global_coordinates.size_1],
+                        velocity, angle)
+                    temp1.append(velocity)
+                    temp1.append(angle)
+                    global_coordinates[j] = temp1
+                    j += 1
+            print("Second layer done.Time = " + str(time.time() - start))
+        elif i == 2:
+            j = global_coordinates.size_1 + global_coordinates.size_2
+            velocity = vector_v.max()
+            while j < global_coordinates.get_size():
+                for angle in vector_beta:
+                    temp2 = iteration_of_predict(
+                        global_coordinates[global_coordinates.size_1 + ((j - (
+                                global_coordinates.size_1 + global_coordinates.size_2)) % global_coordinates.size_1)],
+                        velocity, angle)
+                    temp2.append(velocity)
+                    temp2.append(angle)
+                    global_coordinates[j] = temp2
+                    field_x.append(temp2[0])
+                    field_y.append(temp2[1])
+                    if control_criterion(temp2) < optimal_criterion:
+                        optimal_trajectory.pop()
+                        optimal_trajectory.append(
+                            [global_coordinates[global_coordinates.get_index_of_grandparent(j)],
+                             global_coordinates[global_coordinates.get_index_of_parent(j)],
+                             global_coordinates[j]])
+                        optimal_criterion = control_criterion(temp2)
+                    j += 1
+            print("Third layer done.Time = " + str(time.time() - start))
+            print("Absolute time = " + str(t))
+            print()
+
+    predicted_trajectory_x = [optimal_trajectory[0][0][0], optimal_trajectory[0][1][0],
+                              optimal_trajectory[0][2][0]]
+    predicted_trajectory_y = [optimal_trajectory[0][0][1], optimal_trajectory[0][1][1],
+                              optimal_trajectory[0][2][1]]
+    predicted_trajectory_phi = [optimal_trajectory[0][0][2], optimal_trajectory[0][1][2],
+                                optimal_trajectory[0][2][2]]
+
+    result_x = predicted_trajectory_x[0]
+    result_y = predicted_trajectory_y[0]
+    result_phi = predicted_trajectory_phi[0]
+    result_v = optimal_trajectory[0][0][3]
+    result_beta = optimal_trajectory[0][0][4]
+
+    print("Now I'm here - x : " + str(result_x) + ' y: ' + str(result_y))
+    print("Distance from line: " + str(get_distance_from_line(result_x, result_y)))
+    print()
+
+    if is_on_target(predicted_trajectory_x[2], predicted_trajectory_y[2], x_t, y_t):
+        print("Predicted trajectory is in target!")
+        result_x = predicted_trajectory_x[1]
+        result_y = predicted_trajectory_y[1]
+        result_phi = predicted_trajectory_phi[1]
+        # plt.quiver(result_x, result_y, L * cos(result_phi), L * sin(result_phi), pivot='middle')
+        m += 1
+    elif is_on_target(predicted_trajectory_x[1], predicted_trajectory_y[1], x_t, y_t) and m == 1:
+        print("Predicted trajectory is in target!")
+        result_x = predicted_trajectory_x[1]
+        result_y = predicted_trajectory_y[1]
+        result_phi = predicted_trajectory_phi[1]
+        # plt.quiver(result_x, result_y, L * cos(result_phi), L * sin(result_phi), pivot='middle')
+
+    result_trajectory_x.append(result_x)
+    result_trajectory_y.append(result_y)
+    result_trajectory_phi.append(result_beta)
+
+    plt.scatter(field_x, field_y, color='g', alpha=0.3)
+
+    # plt.quiver(_initial_x, _initial_y, L * cos(_initial_phi), L * sin(_initial_phi), pivot='middle')
 
     return [result_x, result_y, result_phi, result_v, result_beta]
 
@@ -274,7 +376,10 @@ x_previous = coordinates[0]
 y_previous = coordinates[1]
 
 while not is_on_target(x, y, x_t, y_t):
-    coordinates = predictive_control(x, y, phi, v, x_t, y_t)
+    if get_distance_from_target(coordinates[0], coordinates[1]) < (vector_v.max() * 3 * delta_t):
+        coordinates = predictive_control(x, y, phi, v, x_t, y_t)
+    else:
+        coordinates = predictive_control_optimized(x, y, phi, v, x_t, y_t)
     x = coordinates[0]
     y = coordinates[1]
     phi = coordinates[2]
@@ -291,7 +396,4 @@ while not is_on_target(x, y, x_t, y_t):
     p += 1
 
 plt.plot(result_trajectory_x, result_trajectory_y, 'r')
-print("Size_max_1: " + str(size_max_1))
-print("Size_max_2: " + str(size_max_2))
-print("Size_max_3: " + str(size_max_3))
 plt.show()
