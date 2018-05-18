@@ -1,6 +1,6 @@
 import math
 
-eps = 0.5
+eps = 0.02
 eps_beta = 0.1
 # Parameters
 L = 0.5
@@ -21,5 +21,5 @@ phi_0 = math.pi
 
 # Target
 x_t = 2
-y_t = 2
+y_t = 5
 

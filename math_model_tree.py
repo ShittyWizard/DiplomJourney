@@ -170,7 +170,7 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
                     temp1 = iteration_of_predict(global_coordinates[(j - size_max_1) // size_max_1],
                                                  velocity, angle)
                     global_coordinates[j] = temp1
-                j += 1
+                    j += 1
             print("Second layer done.Time = " + str(time.time() - start))
         elif i == 2:
             j = size_max_1 + size_max_2
