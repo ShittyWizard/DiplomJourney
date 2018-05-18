@@ -196,18 +196,6 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
             print("Absolute time = " + str(t))
             print()
 
-            plt.scatter(field_x, field_y, color='g', alpha=0.3)
-
-            plt.quiver(_initial_x, _initial_y, L * cos(_initial_phi), L * sin(_initial_phi), pivot='middle')
-            plt.quiver(optimal_trajectory[0][0][0], optimal_trajectory[0][0][1], L * cos(optimal_trajectory[0][0][2]),
-                       L * sin(optimal_trajectory[0][0][2]), pivot='middle', alpha=0.2)
-
-            plt.quiver(optimal_trajectory[0][1][0], optimal_trajectory[0][1][1], L * cos(optimal_trajectory[0][1][2]),
-                       L * sin(optimal_trajectory[0][1][2]), pivot='middle', alpha=0.2)
-
-            plt.quiver(optimal_trajectory[0][2][0], optimal_trajectory[0][2][1], L * cos(optimal_trajectory[0][2][2]),
-                       L * sin(optimal_trajectory[0][2][2]), pivot='middle', alpha=0.2)
-
             result_trajectory_x = [optimal_trajectory[0][0][0], optimal_trajectory[0][1][0],
                                    optimal_trajectory[0][2][0]]
             result_trajectory_y = [optimal_trajectory[0][0][1], optimal_trajectory[0][1][1],
@@ -215,15 +203,20 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
             result_trajectory_phi = [optimal_trajectory[0][0][2], optimal_trajectory[0][1][2],
                                      optimal_trajectory[0][2][2]]
 
+            plt.scatter(field_x, field_y, color='g', alpha=0.3)
+
+            plt.quiver(result_trajectory_x[0], result_trajectory_y[0], L * cos(result_trajectory_phi[0]),
+                       L * sin(result_trajectory_phi[0]), pivot='middle', alpha=0.2)
+
+            plt.quiver(result_trajectory_x[1], result_trajectory_y[1], L * cos(result_trajectory_phi[1]),
+                       L * sin(result_trajectory_phi[1]), pivot='middle', alpha=0.2)
+
+            plt.quiver(result_trajectory_x[2], result_trajectory_y[2], L * cos(result_trajectory_phi[2]),
+                       L * sin(result_trajectory_phi[2]), pivot='middle', alpha=0.2)
+
             result_x = result_trajectory_x[0]
             result_y = result_trajectory_y[0]
             result_phi = result_trajectory_phi[0]
-
-            plt.plot(
-                [_initial_x, result_trajectory_x[1], result_trajectory_x[2]],
-                [_initial_y, result_trajectory_y[1], result_trajectory_y[2]],
-                'r',
-                linewidth=3)
 
             print("Now I'm here - x : " + str(result_x) + ' y: ' + str(result_y))
             print("Distance from line: " + str(get_distance_from_line(result_x, result_y)))
