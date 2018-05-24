@@ -31,3 +31,6 @@ class CoordinateTree:
 
     def get_size(self):
         return self.size_1 + pow(self.size_1, 2) + pow(self.size_1, 3)
+
+    def clear(self):
+        self.tree = np.empty(self.get_size(), tuple)

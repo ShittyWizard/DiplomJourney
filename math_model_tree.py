@@ -82,10 +82,10 @@ def v_phi(time, _velocity, angle_beta):
 
 # Criterion for optimizing movement
 def control_criterion(predicted_coordinates):
-    angle_from_line = (arctan(x_t / y_t) - predicted_coordinates[2])
+    angle_criterion = math.atan(y_t / x_t)
     distance_from_target = get_distance_from_target(predicted_coordinates[0], predicted_coordinates[1])
     distance_from_line = get_distance_from_line(predicted_coordinates[0], predicted_coordinates[1])
-    return 1000 * distance_from_target + 10 * angle_from_line ** 2 + 10 * distance_from_line ** 2
+    return 10000 * distance_from_target + 10000 * distance_from_line ** 2
 
 
 # Integration
@@ -113,7 +113,7 @@ def iteration_of_predict(_global_coordinates, _v, _angle):
     _phi = angle_phi(_v, _angle)
     _x = coordinate_x(_v, _global_coordinates[2] + _phi)
     _y = coordinate_y(_v, _global_coordinates[2] + _phi)
-    return [_global_coordinates[0] + _x, _global_coordinates[1] + _y, _global_coordinates[2] + _phi]
+    return [_global_coordinates[0] + _x, _global_coordinates[1] + _y, _global_coordinates[2] + _phi, _v, _angle]
 
 
 size_max_1 = size(vector_beta) * size(vector_v)
@@ -146,6 +146,7 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
     global result_trajectory_x, result_trajectory_y, result_trajectory_phi
     global t, m
     global result_v, result_beta
+    global recursive
 
     initial_coordinates = [_initial_x, _initial_y, _initial_phi]
     global_coordinates = CoordinateTree(size_max_1)
@@ -156,6 +157,7 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
     field_x = []
     field_y = []
     t += delta_t
+
     start = time.time()
     for i in range(prediction_horizon):
         if i == 0:
@@ -186,10 +188,12 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
                     field_x.append(temp2[0])
                     field_y.append(temp2[1])
                     if control_criterion(temp2) < optimal_criterion:
+                        print("Before POP: " + str(optimal_trajectory))
                         optimal_trajectory.pop()
                         optimal_trajectory.append([global_coordinates[global_coordinates.get_index_of_parent(j)[1]],
                                                    global_coordinates[global_coordinates.get_index_of_parent(j)[0]],
                                                    global_coordinates[j]])
+                        print("After POP: " + str(optimal_trajectory))
                         result_v = velocity
                         result_beta = angle
                         optimal_criterion = control_criterion(temp2)
@@ -209,29 +213,37 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
             result_y = predicted_trajectory_y[0]
             result_phi = predicted_trajectory_phi[0]
 
-            if is_on_target(predicted_trajectory_x[1], predicted_trajectory_y[1], x_t, y_t)[0] and m == 1:
-                print("Predicted trajectory is in target! x2")
+            if m == 2:
+                print("Predicted trajectory is in target! x4")
+                result_x = predicted_trajectory_x[2]
+                result_y = predicted_trajectory_y[2]
+                result_phi = predicted_trajectory_phi[2]
+                print("Distance from target: " + str(
+                    is_on_target(predicted_trajectory_x[1], predicted_trajectory_y[1], x_t, y_t)[1]))
+            elif m == 1:
+                print("Predicted trajectory is in target! x3")
                 result_x = predicted_trajectory_x[1]
                 result_y = predicted_trajectory_y[1]
                 result_phi = predicted_trajectory_phi[1]
                 print("Distance from target: " + str(
                     is_on_target(predicted_trajectory_x[1], predicted_trajectory_y[1], x_t, y_t)[1]))
-            elif is_on_target(predicted_trajectory_x[2], predicted_trajectory_y[2], x_t, y_t)[0]:
-                print("Predicted trajectory is in target! x1")
-                result_x = predicted_trajectory_x[1]
-                result_y = predicted_trajectory_y[1]
-                result_phi = predicted_trajectory_phi[1]
                 m += 1
+            elif is_on_target(predicted_trajectory_x[2], predicted_trajectory_y[2], x_t, y_t)[0]:
+                print("Predicted trajectory is in target! x2")
+                result_x = predicted_trajectory_x[0]
+                result_y = predicted_trajectory_y[0]
+                result_phi = predicted_trajectory_phi[0]
                 print("Distance from target: " + str(
-                    is_on_target(predicted_trajectory_x[2], predicted_trajectory_y[2], x_t, y_t)[1]))
+                    is_on_target(predicted_trajectory_x[1], predicted_trajectory_y[1], x_t, y_t)[1]))
+                m += 1
 
             plt.scatter(field_x, field_y, color='g', alpha=0.3)
 
             result_trajectory_x.append(result_x)
             result_trajectory_y.append(result_y)
             result_trajectory_phi.append(result_beta)
+            print()
             print("Now I'm here - x : " + str(result_x) + ' y: ' + str(result_y))
-            print("Distance from line: " + str(get_distance_from_line(result_x, result_y)))
             print()
     return [result_x, result_y, result_phi, result_v, result_beta]
 
@@ -241,6 +253,9 @@ coordinates = [x_0, y_0, phi_0, v, beta]
 k = 0
 x_previous = coordinates[0]
 y_previous = coordinates[1]
+v_0 = 0
+v = v_0
+recursive = False
 while not is_on_target(x, y, x_t, y_t)[0]:
     coordinates = predictive_control(x, y, phi, v, x_t, y_t)
     x = coordinates[0]
@@ -248,11 +263,11 @@ while not is_on_target(x, y, x_t, y_t)[0]:
     phi = coordinates[2]
     v = coordinates[3]
     beta = coordinates[4]
-    if x == x_previous and y == y_previous:
-        k += 1
-    if k == 2:
-        print("Recursive error")
+    if recursive:
+        print("Recursive error.")
         break
+    elif x == x_previous and y == y_previous:
+        recursive = True
     x_previous = x
     y_previous = y
     print("Iteration number = " + str(p))

@@ -1,12 +1,12 @@
 import math
 
-eps = 0.1
+eps = 0.01
 eps_beta = 0.1
 # Parameters
 L = 0.5
 
 # Constraints
-delta_t = 0.5
+delta_t = 0.1
 delta_v = 0.1
 delta_beta = math.pi / 96
 beta_max = math.pi / 3
@@ -18,5 +18,5 @@ y_0 = 0
 phi_0 = math.pi
 
 # Target
-x_t = 2
-y_t = 5
+x_t = -2
+y_t = -5
