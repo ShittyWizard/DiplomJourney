@@ -53,7 +53,7 @@ def get_distance_from_line(x_a, y_a):
     else:
         distance = (abs((y_t - y_0) * x_a - (x_t - x_0) * y_a + x_t * y_0 - y_t * x_0)
                     / (math.sqrt((y_t - y_0) ** 2 + (x_t - x_0) ** 2)))
-    return distance
+    return distance ** 2
 
 
 def get_distance_from_target(x_a, y_a):
@@ -82,10 +82,9 @@ def v_phi(time, _velocity, angle_beta):
 
 # Criterion for optimizing movement
 def control_criterion(predicted_coordinates):
-    angle_criterion = math.atan(y_t / x_t)
     distance_from_target = get_distance_from_target(predicted_coordinates[0], predicted_coordinates[1])
     distance_from_line = get_distance_from_line(predicted_coordinates[0], predicted_coordinates[1])
-    return 10000 * distance_from_target + 10000 * distance_from_line ** 2
+    return 10000 * distance_from_target + 10000 * distance_from_line
 
 
 # Integration
@@ -124,11 +123,10 @@ plt.figure(1)
 plt.grid()
 plt.xlabel("Coordinate X")
 plt.ylabel("Coordinate Y")
-plt.title(r'$\beta_{max} = $' + str(beta_max) + '  ' + r'$\varphi_0 = $' + str(phi_0) + ' ')
+plt.title(r'$\beta_{max} = $' + str(beta_max) + '  ' + r'$v_{max} = $' + str(v_max) + '  ' + r'$\varphi_0 = $' + str(
+    phi_0) + ' ' + r'$ L = $' + str(L))
 
 t = 0
-
-plt.plot([x_0, x_t], [y_0, y_t], 'b', linewidth=3)
 
 # Stack with coordinates for optimal trajectory
 optimal_trajectory = [0]
@@ -188,12 +186,10 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
                     field_x.append(temp2[0])
                     field_y.append(temp2[1])
                     if control_criterion(temp2) < optimal_criterion:
-                        print("Before POP: " + str(optimal_trajectory))
                         optimal_trajectory.pop()
                         optimal_trajectory.append([global_coordinates[global_coordinates.get_index_of_parent(j)[1]],
                                                    global_coordinates[global_coordinates.get_index_of_parent(j)[0]],
                                                    global_coordinates[j]])
-                        print("After POP: " + str(optimal_trajectory))
                         result_v = velocity
                         result_beta = angle
                         optimal_criterion = control_criterion(temp2)
@@ -237,13 +233,13 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
                     is_on_target(predicted_trajectory_x[1], predicted_trajectory_y[1], x_t, y_t)[1]))
                 m += 1
 
-            plt.scatter(field_x, field_y, color='g', alpha=0.3)
+            # plt.scatter(field_x, field_y, color='g', alpha=0.1)
 
             result_trajectory_x.append(result_x)
             result_trajectory_y.append(result_y)
             result_trajectory_phi.append(result_beta)
             print()
-            print("Now I'm here - x : " + str(result_x) + ' y: ' + str(result_y))
+            print("Now I'm here - x : " + str(result_x) + ' y: ' + str(result_y) + ' v: ' + str(result_v))
             print()
     return [result_x, result_y, result_phi, result_v, result_beta]
 
@@ -271,7 +267,18 @@ while not is_on_target(x, y, x_t, y_t)[0]:
     x_previous = x
     y_previous = y
     print("Iteration number = " + str(p))
+    print()
     p += 1
+
+# Initial position
+plt.quiver(x_0, y_0, L * cos(phi_0), L * sin(phi_0), pivot='middle')
+
+# Result trajectory
 plt.plot(result_trajectory_x, result_trajectory_y, 'r', linewidth=3.0)
 plt.plot(result_trajectory_x, result_trajectory_y, 'ro')
+
+# Line from initial point to target
+plt.plot([x_0, x_t], [y_0, y_t], 'b', linewidth=3, alpha=0.5)
+plt.plot([x_0, x_t], [y_0, y_t], 'bo')
+
 plt.show()
