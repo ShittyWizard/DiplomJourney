@@ -41,9 +41,9 @@ result_vector_phi = [phi]
 
 def is_on_target(actual_x, actual_y, target_x, target_y):
     if (target_x - actual_x) ** 2 + (target_y - actual_y) ** 2 <= eps:
-        return True
+        return [True, (target_x - actual_x) ** 2 + (target_y - actual_y) ** 2]
     else:
-        return False
+        return [False, (target_x - actual_x) ** 2 + (target_y - actual_y) ** 2]
 
 
 # Function for getting distance from robot's actual position to line from initial position to target
@@ -53,7 +53,7 @@ def get_distance_from_line(x_a, y_a):
     else:
         distance = (abs((y_t - y_0) * x_a - (x_t - x_0) * y_a + x_t * y_0 - y_t * x_0)
                     / (math.sqrt((y_t - y_0) ** 2 + (x_t - x_0) ** 2)))
-    return distance
+    return distance ** 2
 
 
 def get_distance_from_target(x_a, y_a):
@@ -82,10 +82,9 @@ def v_phi(time, _velocity, angle_beta):
 
 # Criterion for optimizing movement
 def control_criterion(predicted_coordinates):
-    angle_from_line = (arctan(x_t / y_t) - predicted_coordinates[2])
     distance_from_target = get_distance_from_target(predicted_coordinates[0], predicted_coordinates[1])
     distance_from_line = get_distance_from_line(predicted_coordinates[0], predicted_coordinates[1])
-    return 1000 * distance_from_target + 10 * angle_from_line ** 2 + 10 * distance_from_line ** 2
+    return 10000 * distance_from_target + 10000 * distance_from_line
 
 
 # Integration
@@ -113,7 +112,7 @@ def iteration_of_predict(_global_coordinates, _v, _angle):
     _phi = angle_phi(_v, _angle)
     _x = coordinate_x(_v, _global_coordinates[2] + _phi)
     _y = coordinate_y(_v, _global_coordinates[2] + _phi)
-    return [_global_coordinates[0] + _x, _global_coordinates[1] + _y, _global_coordinates[2] + _phi]
+    return [_global_coordinates[0] + _x, _global_coordinates[1] + _y, _global_coordinates[2] + _phi, _v, _angle]
 
 
 size_max_1 = size(vector_beta) * size(vector_v)
@@ -124,25 +123,28 @@ plt.figure(1)
 plt.grid()
 plt.xlabel("Coordinate X")
 plt.ylabel("Coordinate Y")
-plt.title(r'$\beta_{max} = $' + str(beta_max) + '  ' + r'$\varphi_0 = $' + str(phi_0) + ' ')
+plt.title(r'$\beta_{max} = $' + str(beta_max) + '  ' + r'$v_{max} = $' + str(v_max) + '  ' + r'$\varphi_0 = $' + str(
+    phi_0) + ' ' + r'$ L = $' + str(L))
 
 t = 0
 
-plt.plot([x_0, x_t], [y_0, y_t], 'b', linewidth=3)
-
 # Stack with coordinates for optimal trajectory
 optimal_trajectory = [0]
+result_trajectory_x = [x_0]
+result_trajectory_y = [y_0]
+result_trajectory_phi = [phi_0]
 optimal_criterion = control_criterion([x_0, y_0, phi_0])
 result_v = 0
 result_beta = 0
+m = 0  # For optimizing finishing
 
 
 def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, _target_x, _target_y):
-    global optimal_trajectory
-    global optimal_criterion
-    global t
-    global result_v
-    global result_beta
+    global optimal_trajectory, optimal_criterion
+    global result_trajectory_x, result_trajectory_y, result_trajectory_phi
+    global t, m
+    global result_v, result_beta
+    global recursive
 
     initial_coordinates = [_initial_x, _initial_y, _initial_phi]
     global_coordinates = CoordinateTree(size_max_1)
@@ -153,6 +155,7 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
     field_x = []
     field_y = []
     t += delta_t
+
     start = time.time()
     for i in range(prediction_horizon):
         if i == 0:
@@ -167,17 +170,17 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
             j = size_max_1
             for velocity in vector_v:
                 for angle in vector_beta:
-                    temp1 = iteration_of_predict(global_coordinates[(j - size_max_1) // size_max_1],
+                    temp1 = iteration_of_predict(global_coordinates[(j - size_max_1) % size_max_1],
                                                  velocity, angle)
                     global_coordinates[j] = temp1
-                j += 1
+                    j += 1
             print("Second layer done.Time = " + str(time.time() - start))
         elif i == 2:
             j = size_max_1 + size_max_2
             for velocity in vector_v:
                 for angle in vector_beta:
                     temp2 = iteration_of_predict(
-                        global_coordinates[size_max_1 + ((j - (size_max_1 + size_max_2)) // size_max_1)],
+                        global_coordinates[size_max_1 + ((j - (size_max_1 + size_max_2)) % size_max_1)],
                         velocity, angle)
                     global_coordinates[j] = temp2
                     field_x.append(temp2[0])
@@ -195,37 +198,48 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
             print("Absolute time = " + str(t))
             print()
 
-            plt.scatter(field_x, field_y, color='g', alpha=0.3)
+            predicted_trajectory_x = [optimal_trajectory[0][0][0], optimal_trajectory[0][1][0],
+                                      optimal_trajectory[0][2][0]]
+            predicted_trajectory_y = [optimal_trajectory[0][0][1], optimal_trajectory[0][1][1],
+                                      optimal_trajectory[0][2][1]]
+            predicted_trajectory_phi = [optimal_trajectory[0][0][2], optimal_trajectory[0][1][2],
+                                        optimal_trajectory[0][2][2]]
 
-            plt.quiver(_initial_x, _initial_y, L * cos(_initial_phi), L * sin(_initial_phi), pivot='middle')
-            plt.quiver(optimal_trajectory[0][0][0], optimal_trajectory[0][0][1], L * cos(optimal_trajectory[0][0][2]),
-                       L * sin(optimal_trajectory[0][0][2]), pivot='middle', alpha=0.2)
+            result_x = predicted_trajectory_x[0]
+            result_y = predicted_trajectory_y[0]
+            result_phi = predicted_trajectory_phi[0]
 
-            plt.quiver(optimal_trajectory[0][1][0], optimal_trajectory[0][1][1], L * cos(optimal_trajectory[0][1][2]),
-                       L * sin(optimal_trajectory[0][1][2]), pivot='middle', alpha=0.2)
+            if m == 2:
+                print("Predicted trajectory is in target! x4")
+                result_x = predicted_trajectory_x[2]
+                result_y = predicted_trajectory_y[2]
+                result_phi = predicted_trajectory_phi[2]
+                print("Distance from target: " + str(
+                    is_on_target(predicted_trajectory_x[1], predicted_trajectory_y[1], x_t, y_t)[1]))
+            elif m == 1:
+                print("Predicted trajectory is in target! x3")
+                result_x = predicted_trajectory_x[1]
+                result_y = predicted_trajectory_y[1]
+                result_phi = predicted_trajectory_phi[1]
+                print("Distance from target: " + str(
+                    is_on_target(predicted_trajectory_x[1], predicted_trajectory_y[1], x_t, y_t)[1]))
+                m += 1
+            elif is_on_target(predicted_trajectory_x[2], predicted_trajectory_y[2], x_t, y_t)[0]:
+                print("Predicted trajectory is in target! x2")
+                result_x = predicted_trajectory_x[0]
+                result_y = predicted_trajectory_y[0]
+                result_phi = predicted_trajectory_phi[0]
+                print("Distance from target: " + str(
+                    is_on_target(predicted_trajectory_x[1], predicted_trajectory_y[1], x_t, y_t)[1]))
+                m += 1
 
-            plt.quiver(optimal_trajectory[0][2][0], optimal_trajectory[0][2][1], L * cos(optimal_trajectory[0][2][2]),
-                       L * sin(optimal_trajectory[0][2][2]), pivot='middle', alpha=0.2)
+            # plt.scatter(field_x, field_y, color='g', alpha=0.1)
 
-            result_trajectory_x = [optimal_trajectory[0][0][0], optimal_trajectory[0][1][0],
-                                   optimal_trajectory[0][2][0]]
-            result_trajectory_y = [optimal_trajectory[0][0][1], optimal_trajectory[0][1][1],
-                                   optimal_trajectory[0][2][1]]
-            result_trajectory_phi = [optimal_trajectory[0][0][2], optimal_trajectory[0][1][2],
-                                     optimal_trajectory[0][2][2]]
-
-            result_x = result_trajectory_x[2]
-            result_y = result_trajectory_y[2]
-            result_phi = result_trajectory_phi[2]
-
-            plt.plot(
-                [_initial_x, result_trajectory_x[1], result_trajectory_x[2]],
-                [_initial_y, result_trajectory_y[1], result_trajectory_y[2]],
-                'r',
-                linewidth=3)
-
-            print("Now I'm here - x : " + str(result_x) + ' y: ' + str(result_y))
-            print("Distance from line: " + str(get_distance_from_line(result_x, result_y)))
+            result_trajectory_x.append(result_x)
+            result_trajectory_y.append(result_y)
+            result_trajectory_phi.append(result_beta)
+            print()
+            print("Now I'm here - x : " + str(result_x) + ' y: ' + str(result_y) + ' v: ' + str(result_v))
             print()
     return [result_x, result_y, result_phi, result_v, result_beta]
 
@@ -235,21 +249,36 @@ coordinates = [x_0, y_0, phi_0, v, beta]
 k = 0
 x_previous = coordinates[0]
 y_previous = coordinates[1]
-while not is_on_target(x, y, x_t, y_t):
+v_0 = 0
+v = v_0
+recursive = False
+while not is_on_target(x, y, x_t, y_t)[0]:
     coordinates = predictive_control(x, y, phi, v, x_t, y_t)
     x = coordinates[0]
     y = coordinates[1]
     phi = coordinates[2]
     v = coordinates[3]
     beta = coordinates[4]
-    if x == x_previous and y == y_previous:
-        k += 1
-    if k == 2:
-        print("Recursive error")
+    if recursive:
+        print("Recursive error.")
         break
+    elif x == x_previous and y == y_previous:
+        recursive = True
     x_previous = x
     y_previous = y
     print("Iteration number = " + str(p))
+    print()
     p += 1
+
+# Initial position
+plt.quiver(x_0, y_0, L * cos(phi_0), L * sin(phi_0), pivot='middle')
+
+# Result trajectory
+plt.plot(result_trajectory_x, result_trajectory_y, 'r', linewidth=3.0)
+plt.plot(result_trajectory_x, result_trajectory_y, 'ro')
+
+# Line from initial point to target
+plt.plot([x_0, x_t], [y_0, y_t], 'b', linewidth=3, alpha=0.5)
+plt.plot([x_0, x_t], [y_0, y_t], 'bo')
 
 plt.show()
