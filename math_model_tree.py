@@ -115,6 +115,25 @@ def iteration_of_predict(_global_coordinates, _v, _angle):
     return [_global_coordinates[0] + _x, _global_coordinates[1] + _y, _global_coordinates[2] + _phi, _v, _angle]
 
 
+def new_target(actual_x, actual_y, actual_phi, target_x, target_y):
+    global x_t, y_t
+    print("Previous target: " + str(x_t) + " " + str(y_t))
+    x_t = target_x
+    y_t = target_y
+    x = actual_x
+    y = actual_y
+    phi = actual_phi
+    print("New target: " + str(x_t) + " " + str(y_t))
+
+
+def plot_from_actual_to_target(initial_x, initial_y, initial_phi, target_x, target_y):
+    # Line from initial point to 1st target
+    plt.plot([initial_x, target_x], [initial_y, target_y], 'b', linewidth=3, alpha=0.5)
+    plt.plot([initial_x, target_x], [initial_y, target_y], 'bo')
+    # Initial position
+    plt.quiver(initial_x, initial_y, cos(initial_phi), sin(initial_phi), pivot='middle')
+
+
 size_max_1 = size(vector_beta) * size(vector_v)
 size_max_2 = pow(size_max_1, 2)
 size_max_3 = pow(size_max_1, 3)
@@ -139,7 +158,7 @@ result_beta = 0
 m = 0  # For optimizing finishing
 
 
-def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, _target_x, _target_y):
+def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, _target_x, _target_y, need_scatter):
     global optimal_trajectory, optimal_criterion
     global result_trajectory_x, result_trajectory_y, result_trajectory_phi
     global t, m
@@ -232,8 +251,8 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
                 print("Distance from target: " + str(
                     is_on_target(predicted_trajectory_x[1], predicted_trajectory_y[1], x_t, y_t)[1]))
                 m += 1
-
-            # plt.scatter(field_x, field_y, color='g', alpha=0.1)
+            if need_scatter:
+                plt.scatter(field_x, field_y, color='g', alpha=0.2)
 
             result_trajectory_x.append(result_x)
             result_trajectory_y.append(result_y)
@@ -252,33 +271,44 @@ y_previous = coordinates[1]
 v_0 = 0
 v = v_0
 recursive = False
+need_scatter = False
+
+plot_from_actual_to_target(x_0, y_0, phi_0, x_t, y_t)
+
 while not is_on_target(x, y, x_t, y_t)[0]:
-    coordinates = predictive_control(x, y, phi, v, x_t, y_t)
+    coordinates = predictive_control(x, y, phi, v, x_t, y_t, need_scatter)
     x = coordinates[0]
     y = coordinates[1]
     phi = coordinates[2]
     v = coordinates[3]
     beta = coordinates[4]
+    need_scatter = False
     if recursive:
         print("Recursive error.")
         break
     elif x == x_previous and y == y_previous:
         recursive = True
+    # if p == 10:
+    #     new_target(x, y, phi, -0.5, -5)
+    #     plot_from_actual_to_target(x, y, phi, x_t, y_t)
+    if p == 20:
+        new_target(x, y, phi, -1.75, -1)
+        plot_from_actual_to_target(x, y, phi, x_t, y_t)
+        need_scatter = True
+    # elif p == 30:
+    #     new_target(x, y, phi, -1.1, -5)
+    #     plot_from_actual_to_target(x, y, phi, x_t, y_t)
+    # elif p == 40:
+    #     new_target(x, y, phi, -1.5, -5)
+    #     plot_from_actual_to_target(x, y, phi, x_t, y_t)
     x_previous = x
     y_previous = y
     print("Iteration number = " + str(p))
     print()
     p += 1
 
-# Initial position
-plt.quiver(x_0, y_0, L * cos(phi_0), L * sin(phi_0), pivot='middle')
-
 # Result trajectory
 plt.plot(result_trajectory_x, result_trajectory_y, 'r', linewidth=3.0)
 plt.plot(result_trajectory_x, result_trajectory_y, 'ro')
-
-# Line from initial point to target
-plt.plot([x_0, x_t], [y_0, y_t], 'b', linewidth=3, alpha=0.5)
-plt.plot([x_0, x_t], [y_0, y_t], 'bo')
 
 plt.show()
