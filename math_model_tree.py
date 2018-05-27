@@ -4,7 +4,7 @@ from scipy import *
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.integrate as sp
-
+import sys as sys
 from CoordinateTree import CoordinateTree
 from config import phi_0, L, y_t, y_0, x_t, x_0, beta_max, v_max, eps, delta_t, delta_beta, delta_v
 
@@ -260,6 +260,7 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
             print()
             print("Now I'm here - x : " + str(result_x) + ' y: ' + str(result_y) + ' v: ' + str(result_v))
             print()
+    optimal_criterion = sys.maxsize
     return [result_x, result_y, result_phi, result_v, result_beta]
 
 
@@ -282,6 +283,7 @@ while not is_on_target(x, y, x_t, y_t)[0]:
     phi = coordinates[2]
     v = coordinates[3]
     beta = coordinates[4]
+    need_scatter = False
     if recursive:
         print("Recursive error.")
         break
@@ -290,16 +292,11 @@ while not is_on_target(x, y, x_t, y_t)[0]:
     if p == 20:
         new_target(x, y, phi, -2, -5)
         plot_from_actual_to_target(x, y, phi, x_t, y_t)
-    # if p == 20:
-    #     new_target(x, y, phi, -1.75, -1)
-    #     plot_from_actual_to_target(x, y, phi, x_t, y_t)
-    #     need_scatter = True
-    # elif p == 30:
-    #     new_target(x, y, phi, -1.1, -5)
-    #     plot_from_actual_to_target(x, y, phi, x_t, y_t)
-    # elif p == 40:
-    #     new_target(x, y, phi, -1.5, -5)
-    #     plot_from_actual_to_target(x, y, phi, x_t, y_t)
+        need_scatter = True
+    if p == 30:
+        new_target(x, y, phi, -5, -5)
+        plot_from_actual_to_target(x, y, phi, x_t, y_t)
+        need_scatter = True
     x_previous = x
     y_previous = y
     print("Iteration number = " + str(p))
