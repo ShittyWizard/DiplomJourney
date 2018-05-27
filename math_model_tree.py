@@ -116,13 +116,13 @@ def iteration_of_predict(_global_coordinates, _v, _angle):
 
 
 def new_target(actual_x, actual_y, actual_phi, target_x, target_y):
-    global x_t, y_t
+    global x_t, y_t, x_0, y_0, phi_0
     print("Previous target: " + str(x_t) + " " + str(y_t))
     x_t = target_x
     y_t = target_y
-    x = actual_x
-    y = actual_y
-    phi = actual_phi
+    x_0 = actual_x
+    y_0 = actual_y
+    phi_0 = actual_phi
     print("New target: " + str(x_t) + " " + str(y_t))
 
 
@@ -271,7 +271,7 @@ y_previous = coordinates[1]
 v_0 = 0
 v = v_0
 recursive = False
-need_scatter = False
+need_scatter = True
 
 plot_from_actual_to_target(x_0, y_0, phi_0, x_t, y_t)
 
@@ -282,19 +282,18 @@ while not is_on_target(x, y, x_t, y_t)[0]:
     phi = coordinates[2]
     v = coordinates[3]
     beta = coordinates[4]
-    need_scatter = False
     if recursive:
         print("Recursive error.")
         break
     elif x == x_previous and y == y_previous:
         recursive = True
-    # if p == 10:
-    #     new_target(x, y, phi, -0.5, -5)
-    #     plot_from_actual_to_target(x, y, phi, x_t, y_t)
     if p == 20:
-        new_target(x, y, phi, -1.75, -1)
+        new_target(x, y, phi, -2, -5)
         plot_from_actual_to_target(x, y, phi, x_t, y_t)
-        need_scatter = True
+    # if p == 20:
+    #     new_target(x, y, phi, -1.75, -1)
+    #     plot_from_actual_to_target(x, y, phi, x_t, y_t)
+    #     need_scatter = True
     # elif p == 30:
     #     new_target(x, y, phi, -1.1, -5)
     #     plot_from_actual_to_target(x, y, phi, x_t, y_t)
