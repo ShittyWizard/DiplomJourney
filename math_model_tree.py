@@ -1,5 +1,6 @@
 import time
 
+from matplotlib.patches import Rectangle, Polygon
 from scipy import *
 import matplotlib.pyplot as plt
 import numpy as np
@@ -37,6 +38,9 @@ print()
 result_vector_x = [x]
 result_vector_y = [y]
 result_vector_phi = [phi]
+
+# Radius of U-turn
+radius_u_turn = L / sin(beta_max)
 
 
 def is_on_target(actual_x, actual_y, target_x, target_y):
@@ -128,10 +132,73 @@ def new_target(actual_x, actual_y, actual_phi, target_x, target_y):
 
 def plot_from_actual_to_target(initial_x, initial_y, initial_phi, target_x, target_y):
     # Line from initial point to 1st target
-    plt.plot([initial_x, target_x], [initial_y, target_y], 'b', linewidth=3, alpha=0.5)
+    plt.plot([initial_x, target_x], [initial_y, target_y], 'b', linewidth=2, alpha=0.5)
     plt.plot([initial_x, target_x], [initial_y, target_y], 'bo')
     # Initial position
     plt.quiver(initial_x, initial_y, cos(initial_phi), sin(initial_phi), pivot='middle')
+
+
+def turn_left(actual_x, actual_y, actual_phi, distance):
+    if math.pi / 2 <= actual_phi <= 3 * math.pi / 2:
+        if actual_phi <= math.pi:
+            # \ |
+            temp_phi = actual_phi - math.pi / 2
+            target_x = actual_x - distance * cos(temp_phi) - radius_u_turn * sin(temp_phi)
+            target_y = actual_y - distance * sin(temp_phi) + radius_u_turn * cos(temp_phi)
+        else:
+            # / |
+            temp_phi = actual_phi - math.pi
+            target_x = actual_x + distance * sin(temp_phi) - radius_u_turn * cos(temp_phi)
+            target_y = actual_y - distance * cos(temp_phi) - radius_u_turn * sin(temp_phi)
+    else:
+        if actual_phi <= 2 * math.pi:
+            # | \
+            temp_phi = actual_phi - 3 * math.pi / 2
+            target_x = actual_x + distance * cos(temp_phi) + radius_u_turn * sin(temp_phi)
+            target_y = actual_y + distance * sin(temp_phi) - radius_u_turn * cos(temp_phi)
+        else:
+            # | /
+            temp_phi = actual_phi
+            target_x = actual_x - distance * sin(temp_phi) + radius_u_turn * cos(temp_phi)
+            target_y = actual_y + distance * cos(temp_phi) + radius_u_turn * sin(temp_phi)
+    new_target(actual_x, actual_y, actual_phi, target_x, target_y)
+    print("Turning left...")
+    print()
+
+
+def turn_right(actual_x, actual_y, actual_phi, distance):
+    if math.pi / 2 <= actual_phi <= 3 * math.pi / 2:
+        if actual_phi <= math.pi:
+            # \ |
+            temp_phi = actual_phi - math.pi / 2
+            target_x = actual_x + distance * cos(temp_phi) - radius_u_turn * sin(temp_phi)
+            target_y = actual_y + distance * sin(temp_phi) + radius_u_turn * cos(temp_phi)
+        else:
+            # / |
+            temp_phi = actual_phi - math.pi
+            target_x = actual_x - distance * sin(temp_phi) - radius_u_turn * cos(temp_phi)
+            target_y = actual_y + distance * cos(temp_phi) - radius_u_turn * sin(temp_phi)
+    else:
+        if actual_phi <= 2 * math.pi:
+            # | \
+            temp_phi = actual_phi - 3 * math.pi / 2
+            target_x = actual_x - distance * cos(temp_phi) + radius_u_turn * sin(temp_phi)
+            target_y = actual_y - distance * sin(temp_phi) - radius_u_turn * cos(temp_phi)
+        else:
+            # | /
+            temp_phi = actual_phi
+            target_x = actual_x + distance * sin(temp_phi) + radius_u_turn * cos(temp_phi)
+            target_y = actual_y - distance * cos(temp_phi) + radius_u_turn * sin(temp_phi)
+    new_target(actual_x, actual_y, actual_phi, target_x, target_y)
+    print("Turning right...")
+    print()
+
+
+# For future update with autonomnous avoiding barriers (now it handles by operator)
+def move_forward(actual_x, actual_y, actual_phi, distance):
+    target_x = actual_x + distance * cos(actual_phi)
+    target_y = actual_y + distance * sin(actual_phi)
+    new_target(actual_x, actual_y, actual_phi, target_x, target_y)
 
 
 size_max_1 = size(vector_beta) * size(vector_v)
@@ -158,7 +225,7 @@ result_beta = 0
 m = 0  # For optimizing finishing
 
 
-def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, _target_x, _target_y, need_scatter):
+def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, _target_x, _target_y):
     global optimal_trajectory, optimal_criterion
     global result_trajectory_x, result_trajectory_y, result_trajectory_phi
     global t, m
@@ -251,8 +318,8 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
                 print("Distance from target: " + str(
                     is_on_target(predicted_trajectory_x[1], predicted_trajectory_y[1], x_t, y_t)[1]))
                 m += 1
-            if need_scatter:
-                plt.scatter(field_x, field_y, color='g', alpha=0.2)
+
+            # plt.scatter(field_x, field_y, color='g', alpha=0.2)
 
             result_trajectory_x.append(result_x)
             result_trajectory_y.append(result_y)
@@ -272,31 +339,34 @@ y_previous = coordinates[1]
 v_0 = 0
 v = v_0
 recursive = False
-need_scatter = True
+need_scatter = False
 
 plot_from_actual_to_target(x_0, y_0, phi_0, x_t, y_t)
 
 while not is_on_target(x, y, x_t, y_t)[0]:
-    coordinates = predictive_control(x, y, phi, v, x_t, y_t, need_scatter)
+    coordinates = predictive_control(x, y, phi, v, x_t, y_t)
     x = coordinates[0]
     y = coordinates[1]
     phi = coordinates[2]
     v = coordinates[3]
     beta = coordinates[4]
-    need_scatter = False
     if recursive:
         print("Recursive error.")
         break
     elif x == x_previous and y == y_previous:
         recursive = True
     if p == 20:
-        new_target(x, y, phi, -2, -5)
+        turn_left(x, y, phi, 2)
         plot_from_actual_to_target(x, y, phi, x_t, y_t)
-        need_scatter = True
     if p == 30:
+        turn_right(x, y, phi, 4)
+        plot_from_actual_to_target(x, y, phi, x_t, y_t)
+    if p == 60:
+        turn_right(x, y, phi, 2)
+        plot_from_actual_to_target(x, y, phi, x_t, y_t)
+    if p == 70:
         new_target(x, y, phi, -5, -5)
         plot_from_actual_to_target(x, y, phi, x_t, y_t)
-        need_scatter = True
     x_previous = x
     y_previous = y
     print("Iteration number = " + str(p))
@@ -304,7 +374,13 @@ while not is_on_target(x, y, x_t, y_t)[0]:
     p += 1
 
 # Result trajectory
-plt.plot(result_trajectory_x, result_trajectory_y, 'r', linewidth=3.0)
-plt.plot(result_trajectory_x, result_trajectory_y, 'ro')
+plt.plot(result_trajectory_x, result_trajectory_y, 'r', linewidth=2)
+# plt.plot(result_trajectory_x, result_trajectory_y, 'ro', linewidth=1)
 
+barrier_polygon = Polygon([[-1.8, -2], [-2, -3], [-3, -4], [-5, -3], [-3, -1], [-1.8, -2]], fill=False, hatch='//',
+                          edgecolor='black', linewidth='3')
+plt.axes().add_patch(barrier_polygon)
+# barrier_rectangle = Rectangle((-2, 1), 1, 1)
+# plt.axes().add_patch(barrier_rectangle)
+plt.axes().set_aspect(1)
 plt.show()
