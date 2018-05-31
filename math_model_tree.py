@@ -1,6 +1,6 @@
 import time
 
-from matplotlib.patches import Rectangle, Polygon
+from matplotlib.patches import Polygon
 from scipy import *
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,7 +17,6 @@ v = 0
 phi = phi_0
 x = x_0
 y = y_0
-coord_actual = [x, y]
 
 # Prediction horizon * delta_t = 1.5s
 prediction_horizon = 3
@@ -43,6 +42,7 @@ result_vector_phi = [phi]
 radius_u_turn = L / sin(beta_max)
 
 
+# Function which return True/False (Is on target?) and distance from target
 def is_on_target(actual_x, actual_y, target_x, target_y):
     if (target_x - actual_x) ** 2 + (target_y - actual_y) ** 2 <= eps:
         return [True, (target_x - actual_x) ** 2 + (target_y - actual_y) ** 2]
@@ -62,14 +62,6 @@ def get_distance_from_line(x_a, y_a):
 
 def get_distance_from_target(x_a, y_a):
     return math.sqrt((x_t - x_a) ** 2 + (y_t - y_a) ** 2)
-
-
-def saturation(value, value_max):
-    if value > value_max:
-        value = value_max
-    elif value < -value_max:
-        value = -value_max
-    return value
 
 
 def v_x(time, _velocity, _phi):
@@ -225,7 +217,8 @@ result_beta = 0
 m = 0  # For optimizing finishing
 
 
-def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, _target_x, _target_y):
+def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, _target_x, _target_y, _vector_v,
+                       _vector_beta):
     global optimal_trajectory, optimal_criterion
     global result_trajectory_x, result_trajectory_y, result_trajectory_phi
     global t, m
@@ -246,16 +239,16 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
     for i in range(prediction_horizon):
         if i == 0:
             j = 0
-            for velocity in vector_v:
-                for angle in vector_beta:
+            for velocity in _vector_v:
+                for angle in _vector_beta:
                     temp0 = iteration_of_predict(initial_coordinates, velocity, angle)
                     global_coordinates[j] = temp0
                     j += 1
             print("First layer done. Time = " + str(time.time() - start))
         elif i == 1:
             j = size_max_1
-            for velocity in vector_v:
-                for angle in vector_beta:
+            for velocity in _vector_v:
+                for angle in _vector_beta:
                     temp1 = iteration_of_predict(global_coordinates[(j - size_max_1) % size_max_1],
                                                  velocity, angle)
                     global_coordinates[j] = temp1
@@ -263,8 +256,8 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
             print("Second layer done.Time = " + str(time.time() - start))
         elif i == 2:
             j = size_max_1 + size_max_2
-            for velocity in vector_v:
-                for angle in vector_beta:
+            for velocity in _vector_v:
+                for angle in _vector_beta:
                     temp2 = iteration_of_predict(
                         global_coordinates[size_max_1 + ((j - (size_max_1 + size_max_2)) % size_max_1)],
                         velocity, angle)
@@ -331,56 +324,82 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
     return [result_x, result_y, result_phi, result_v, result_beta]
 
 
-p = 1
-coordinates = [x_0, y_0, phi_0, v, beta]
-k = 0
-x_previous = coordinates[0]
-y_previous = coordinates[1]
-v_0 = 0
-v = v_0
-recursive = False
-need_scatter = False
+def add_plot_polygon(coordinates_of_vertexes):
+    barrier_polygon = Polygon(coordinates_of_vertexes, fill=False, hatch='//',
+                              edgecolor='black', linewidth='3')
+    plt.axes().add_patch(barrier_polygon)
 
-plot_from_actual_to_target(x_0, y_0, phi_0, x_t, y_t)
 
-while not is_on_target(x, y, x_t, y_t)[0]:
-    coordinates = predictive_control(x, y, phi, v, x_t, y_t)
+# Initial coordinates format: [initial_x, initial_y, initial_phi, initial_v, initial_beta]
+# Target coordinates format: [target_x, target_y]
+# Vector v : vector with possible velocities for this iteration
+# Vector beta : vector with possible angles for this iteration
+def math_mpc(initial_coordinates, target_coordinates, vector_velocities, vector_beta_angles):
+    global x, y, phi, x_t, y_t, v, recursive
+    print("Start MPC modelling... ")
+    print()
+    p = 1
+    coordinates = initial_coordinates
     x = coordinates[0]
     y = coordinates[1]
     phi = coordinates[2]
-    v = coordinates[3]
-    beta = coordinates[4]
-    if recursive:
-        print("Recursive error.")
-        break
-    elif x == x_previous and y == y_previous:
-        recursive = True
-    if p == 20:
-        turn_left(x, y, phi, 2)
-        plot_from_actual_to_target(x, y, phi, x_t, y_t)
-    if p == 30:
-        turn_right(x, y, phi, 4)
-        plot_from_actual_to_target(x, y, phi, x_t, y_t)
-    if p == 60:
-        turn_right(x, y, phi, 2)
-        plot_from_actual_to_target(x, y, phi, x_t, y_t)
-    if p == 70:
-        new_target(x, y, phi, -5, -5)
-        plot_from_actual_to_target(x, y, phi, x_t, y_t)
-    x_previous = x
-    y_previous = y
-    print("Iteration number = " + str(p))
+    v_0 = coordinates[3]
+    v = v_0
+
+    x_t = target_coordinates[0]
+    y_t = target_coordinates[1]
+
+    x_previous = coordinates[0]
+    y_previous = coordinates[1]
+
+    recursive = False
+    need_scatter = False
+
+    plot_from_actual_to_target(x_0, y_0, phi_0, x_t, y_t)
+
+    while not is_on_target(x, y, x_t, y_t)[0]:
+        coordinates = predictive_control(x, y, phi, v, x_t, y_t, vector_velocities, vector_beta_angles)
+        x = coordinates[0]
+        y = coordinates[1]
+        phi = coordinates[2]
+        v = coordinates[3]
+        beta = coordinates[4]
+        if recursive:
+            print("Recursive error.")
+            break
+        elif x == x_previous and y == y_previous:
+            recursive = True
+        if p == 20:
+            turn_left(x, y, phi, 2)
+            plot_from_actual_to_target(x, y, phi, x_t, y_t)
+        if p == 30:
+            turn_right(x, y, phi, 4)
+            plot_from_actual_to_target(x, y, phi, x_t, y_t)
+        if p == 60:
+            turn_right(x, y, phi, 2)
+            plot_from_actual_to_target(x, y, phi, x_t, y_t)
+        if p == 70:
+            new_target(x, y, phi, -5, -5)
+            plot_from_actual_to_target(x, y, phi, x_t, y_t)
+        x_previous = x
+        y_previous = y
+        print("Iteration number = " + str(p))
+        print()
+        p += 1
+
+    print("MPC modelling has finished. Waiting for plots...")
     print()
-    p += 1
+    # Plot barrier (Polygon)
+    add_plot_polygon([[-1.8, -2], [-2, -3], [-3, -4], [-5, -3], [-3, -1], [-1.8, -2]])
 
-# Result trajectory
-plt.plot(result_trajectory_x, result_trajectory_y, 'r', linewidth=2)
-# plt.plot(result_trajectory_x, result_trajectory_y, 'ro', linewidth=1)
+    # Result trajectory
+    plt.plot(result_trajectory_x, result_trajectory_y, 'r', linewidth=2)
+    # plt.plot(result_trajectory_x, result_trajectory_y, 'ro', linewidth=1)
 
-barrier_polygon = Polygon([[-1.8, -2], [-2, -3], [-3, -4], [-5, -3], [-3, -1], [-1.8, -2]], fill=False, hatch='//',
-                          edgecolor='black', linewidth='3')
-plt.axes().add_patch(barrier_polygon)
-# barrier_rectangle = Rectangle((-2, 1), 1, 1)
-# plt.axes().add_patch(barrier_rectangle)
-plt.axes().set_aspect(1)
-plt.show()
+    # Show result plots
+    plt.axes().set_aspect(1)
+    plt.show()
+    print("Plots are ready.")
+
+
+math_mpc([0, 0, math.pi, 0, 0], [-5, -5], vector_v, vector_beta)
