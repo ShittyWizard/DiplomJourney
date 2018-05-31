@@ -207,13 +207,13 @@ def vector_of_beta_angles(actual_beta):
     return vector_beta_angles
 
 
-def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, _target_x, _target_y, _vector_v,
+def predictive_control(_initial_x, _initial_y, _initial_phi, _target_x, _target_y, _vector_v,
                        _vector_beta):
     global optimal_trajectory, optimal_criterion
     global result_trajectory_x, result_trajectory_y, result_trajectory_phi
     global t, m
     global result_v, result_beta
-    global recursive
+    global recursive, need_scatter
 
     size_max_1 = size(_vector_beta) * size(_vector_v)
     size_max_2 = size_max_1 * size_max_1
@@ -225,10 +225,20 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
     result_x = 0
     result_y = 0
     result_phi = 0
-    field_x = []
-    field_y = []
+    field_x_1 = []
+    field_y_1 = []
+
+    field_x_2 = []
+    field_y_2 = []
+
+    field_x_3 = []
+    field_y_3 = []
     t += delta_t
 
+    if need_scatter:
+        plt.quiver(result_trajectory_x[len(result_trajectory_x) - 1], result_trajectory_y[len(result_trajectory_y) - 1],
+                   cos(result_trajectory_phi[len(result_trajectory_phi) - 1]),
+                   sin(result_trajectory_phi[len(result_trajectory_phi) - 1]), pivot='middle')
     start = time.time()
     for i in range(prediction_horizon):
         if i == 0:
@@ -237,6 +247,8 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
                 for angle in _vector_beta:
                     temp0 = iteration_of_predict(initial_coordinates, velocity, angle)
                     global_coordinates[j] = temp0
+                    field_x_1.append(temp0[0])
+                    field_y_1.append(temp0[1])
                     j += 1
             print("First layer done. Time = " + str(time.time() - start))
         elif i == 1:
@@ -246,6 +258,8 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
                     temp1 = iteration_of_predict(global_coordinates[(j - size_max_1) % size_max_1],
                                                  velocity, angle)
                     global_coordinates[j] = temp1
+                    field_x_2.append(temp1[0])
+                    field_y_2.append(temp1[1])
                     j += 1
             print("Second layer done.Time = " + str(time.time() - start))
         elif i == 2:
@@ -256,8 +270,8 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
                         global_coordinates[size_max_1 + ((j - (size_max_1 + size_max_2)) % size_max_1)],
                         velocity, angle)
                     global_coordinates[j] = temp2
-                    field_x.append(temp2[0])
-                    field_y.append(temp2[1])
+                    field_x_3.append(temp2[0])
+                    field_y_3.append(temp2[1])
                     if control_criterion(temp2) < optimal_criterion:
                         optimal_trajectory.pop()
                         optimal_trajectory.append([global_coordinates[global_coordinates.get_index_of_parent(j)[1]],
@@ -306,14 +320,17 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
                     is_on_target(predicted_trajectory_x[1], predicted_trajectory_y[1], x_t, y_t)[1]))
                 m += 1
 
-            plt.scatter(field_x, field_y, color='g', alpha=0.2)
-            plt.quiver(result_x, result_y, cos(result_phi), sin(result_phi), pivot='middle')
+            if need_scatter:
+                plt.scatter(field_x_1, field_y_1, color='g', alpha=0.2)
+                plt.scatter(field_x_2, field_y_2, color='b', alpha=0.2)
+                plt.scatter(field_x_3, field_y_3, color='r', alpha=0.2)
+
             result_trajectory_x.append(result_x)
             result_trajectory_y.append(result_y)
             result_trajectory_phi.append(result_beta)
             print()
             print("Now I'm here - x : " + str(result_x) + ' y: ' + str(result_y) + ' v: ' + str(
-                result_v) + ' beta: ' + str(result_beta))
+                result_v) + ' beta: ' + str(math.degrees(result_beta)))
             print()
     optimal_criterion = sys.maxsize
     return [result_x, result_y, result_phi, result_v, result_beta]
@@ -332,9 +349,11 @@ def add_plot_polygon(coordinates_of_vertexes):
  Vector beta : vector with possible angles for this iteration
 """
 
+need_scatter = False
+
 
 def math_mpc(initial_coordinates, target_coordinates):
-    global x, y, phi, x_t, y_t, v, beta, recursive
+    global x, y, phi, x_t, y_t, v, beta, recursive, need_scatter
     print("Start MPC modelling... ")
     print()
     p = 1
@@ -353,19 +372,19 @@ def math_mpc(initial_coordinates, target_coordinates):
     y_previous = coordinates[1]
 
     recursive = False
-    need_scatter = True
 
     plot_from_actual_to_target(x_0, y_0, phi_0, x_t, y_t)
 
     while not is_on_target(x, y, x_t, y_t)[0]:
         vector_velocities = vector_of_velocities(v)
         vector_beta_angles = vector_of_beta_angles(beta)
-        coordinates = predictive_control(x, y, phi, v, x_t, y_t, vector_velocities, vector_beta_angles)
+        coordinates = predictive_control(x, y, phi, x_t, y_t, vector_velocities, vector_beta_angles)
         x = coordinates[0]
         y = coordinates[1]
         phi = coordinates[2]
         v = coordinates[3]
         beta = coordinates[4]
+        need_scatter = False
         if recursive:
             print("Recursive error.")
             break
@@ -411,4 +430,4 @@ result_v = 0
 result_beta = 0
 m = 0  # For optimizing finishing
 
-math_mpc([0, 0, math.pi, 0, 0], [-1, -5])
+math_mpc([0, 0, math.pi, 0, 0], [-0.5, -0.5])

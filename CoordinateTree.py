@@ -4,8 +4,8 @@ import numpy as np
 class CoordinateTree:
     def __init__(self, size_max_1):
         self.size_1 = size_max_1
-        self.size_2 = pow(size_max_1, 2)
-        self.size_3 = pow(size_max_1, 3)
+        self.size_2 = size_max_1 * size_max_1
+        self.size_3 = size_max_1 * size_max_1 * size_max_1
         self.tree = np.empty(self.get_size(), tuple)
 
     def __str__(self):
@@ -30,7 +30,7 @@ class CoordinateTree:
             return [index_of_parent, self.get_index_of_parent(index_of_parent)]
 
     def get_size(self):
-        return self.size_1 + pow(self.size_1, 2) + pow(self.size_1, 3)
+        return self.size_1 + self.size_2 + self.size_3
 
     def clear(self):
         self.tree = np.empty(self.get_size(), tuple)
