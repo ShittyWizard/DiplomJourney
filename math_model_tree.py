@@ -7,7 +7,8 @@ import numpy as np
 import scipy.integrate as sp
 import sys as sys
 from CoordinateTree import CoordinateTree
-from config import phi_0, L, y_t, y_0, x_t, x_0, beta_max, v_max, eps, delta_t, delta_beta, delta_v
+from config import phi_0, L, y_t, y_0, x_t, x_0, beta_max, v_max, eps, delta_t, delta_beta, delta_v, v_acc_max, \
+    beta_acc_max
 
 np.set_printoptions(threshold=np.nan)
 
@@ -20,18 +21,6 @@ y = y_0
 
 # Prediction horizon * delta_t = 1.5s
 prediction_horizon = 3
-
-# Generate vector from minimal possible velocity to maximum possible velocity
-vector_v = np.arange(v, v_max + delta_v, delta_v)
-vector_v = np.round(vector_v, 3)
-print("Vector of velocities - " + str(vector_v))
-print()
-
-# Generate vector from minimal possible angle to maximum possible angle
-vector_beta = np.arange(-beta_max, beta_max + delta_beta, delta_beta)
-vector_beta = np.round(vector_beta, 3)
-print("Vector of beta angles - " + str(vector_beta))
-print()
 
 # Generate vectors with coordinates for plotting
 result_vector_x = [x]
@@ -193,28 +182,29 @@ def move_forward(actual_x, actual_y, actual_phi, distance):
     new_target(actual_x, actual_y, actual_phi, target_x, target_y)
 
 
-size_max_1 = size(vector_beta) * size(vector_v)
-size_max_2 = pow(size_max_1, 2)
-size_max_3 = pow(size_max_1, 3)
+def vector_of_velocities(actual_velocity):
+    vector_velocities = []
+    for i in range(1 + 2 * int((v_acc_max * delta_t) / delta_v)):
+        possible_velocity = actual_velocity + delta_v * (i - (v_acc_max * delta_t) / delta_v)
+        if possible_velocity < 0:
+            print(".")
+        elif possible_velocity > v_max:
+            print(".")
+        else:
+            vector_velocities.append(possible_velocity)
+    return vector_velocities
 
-plt.figure(1)
-plt.grid()
-plt.xlabel("Coordinate X")
-plt.ylabel("Coordinate Y")
-plt.title(r'$\beta_{max} = $' + str(beta_max) + '  ' + r'$v_{max} = $' + str(v_max) + '  ' + r'$\varphi_0 = $' + str(
-    phi_0) + ' ' + r'$ L = $' + str(L))
 
-t = 0
-
-# Stack with coordinates for optimal trajectory
-optimal_trajectory = [0]
-result_trajectory_x = [x_0]
-result_trajectory_y = [y_0]
-result_trajectory_phi = [phi_0]
-optimal_criterion = control_criterion([x_0, y_0, phi_0])
-result_v = 0
-result_beta = 0
-m = 0  # For optimizing finishing
+def vector_of_beta_angles(actual_beta):
+    vector_beta_angles = []
+    for i in range(1 + 2 * int((math.degrees(beta_acc_max) * delta_t) / math.degrees(delta_beta))):
+        possible_angle = actual_beta + delta_beta * (
+                i - (math.degrees(beta_acc_max) * delta_t) / math.degrees(delta_beta))
+        if abs(possible_angle) > beta_max:
+            print(".")
+        else:
+            vector_beta_angles.append(possible_angle)
+    return vector_beta_angles
 
 
 def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, _target_x, _target_y, _vector_v,
@@ -224,6 +214,10 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
     global t, m
     global result_v, result_beta
     global recursive
+
+    size_max_1 = size(_vector_beta) * size(_vector_v)
+    size_max_2 = size_max_1 * size_max_1
+    size_max_3 = size_max_1 * size_max_1 * size_max_1
 
     initial_coordinates = [_initial_x, _initial_y, _initial_phi]
     global_coordinates = CoordinateTree(size_max_1)
@@ -312,13 +306,14 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _initial_velocity, 
                     is_on_target(predicted_trajectory_x[1], predicted_trajectory_y[1], x_t, y_t)[1]))
                 m += 1
 
-            # plt.scatter(field_x, field_y, color='g', alpha=0.2)
-
+            plt.scatter(field_x, field_y, color='g', alpha=0.2)
+            plt.quiver(result_x, result_y, cos(result_phi), sin(result_phi), pivot='middle')
             result_trajectory_x.append(result_x)
             result_trajectory_y.append(result_y)
             result_trajectory_phi.append(result_beta)
             print()
-            print("Now I'm here - x : " + str(result_x) + ' y: ' + str(result_y) + ' v: ' + str(result_v))
+            print("Now I'm here - x : " + str(result_x) + ' y: ' + str(result_y) + ' v: ' + str(
+                result_v) + ' beta: ' + str(result_beta))
             print()
     optimal_criterion = sys.maxsize
     return [result_x, result_y, result_phi, result_v, result_beta]
@@ -330,12 +325,16 @@ def add_plot_polygon(coordinates_of_vertexes):
     plt.axes().add_patch(barrier_polygon)
 
 
-# Initial coordinates format: [initial_x, initial_y, initial_phi, initial_v, initial_beta]
-# Target coordinates format: [target_x, target_y]
-# Vector v : vector with possible velocities for this iteration
-# Vector beta : vector with possible angles for this iteration
-def math_mpc(initial_coordinates, target_coordinates, vector_velocities, vector_beta_angles):
-    global x, y, phi, x_t, y_t, v, recursive
+""""
+ Initial coordinates format: [initial_x, initial_y, initial_phi, initial_v, initial_beta]
+ Target coordinates format: [target_x, target_y]
+ Vector v : vector with possible velocities for this iteration
+ Vector beta : vector with possible angles for this iteration
+"""
+
+
+def math_mpc(initial_coordinates, target_coordinates):
+    global x, y, phi, x_t, y_t, v, beta, recursive
     print("Start MPC modelling... ")
     print()
     p = 1
@@ -345,6 +344,7 @@ def math_mpc(initial_coordinates, target_coordinates, vector_velocities, vector_
     phi = coordinates[2]
     v_0 = coordinates[3]
     v = v_0
+    beta = initial_coordinates[4]
 
     x_t = target_coordinates[0]
     y_t = target_coordinates[1]
@@ -353,11 +353,13 @@ def math_mpc(initial_coordinates, target_coordinates, vector_velocities, vector_
     y_previous = coordinates[1]
 
     recursive = False
-    need_scatter = False
+    need_scatter = True
 
     plot_from_actual_to_target(x_0, y_0, phi_0, x_t, y_t)
 
     while not is_on_target(x, y, x_t, y_t)[0]:
+        vector_velocities = vector_of_velocities(v)
+        vector_beta_angles = vector_of_beta_angles(beta)
         coordinates = predictive_control(x, y, phi, v, x_t, y_t, vector_velocities, vector_beta_angles)
         x = coordinates[0]
         y = coordinates[1]
@@ -369,18 +371,6 @@ def math_mpc(initial_coordinates, target_coordinates, vector_velocities, vector_
             break
         elif x == x_previous and y == y_previous:
             recursive = True
-        if p == 20:
-            turn_left(x, y, phi, 2)
-            plot_from_actual_to_target(x, y, phi, x_t, y_t)
-        if p == 30:
-            turn_right(x, y, phi, 4)
-            plot_from_actual_to_target(x, y, phi, x_t, y_t)
-        if p == 60:
-            turn_right(x, y, phi, 2)
-            plot_from_actual_to_target(x, y, phi, x_t, y_t)
-        if p == 70:
-            new_target(x, y, phi, -5, -5)
-            plot_from_actual_to_target(x, y, phi, x_t, y_t)
         x_previous = x
         y_previous = y
         print("Iteration number = " + str(p))
@@ -389,12 +379,12 @@ def math_mpc(initial_coordinates, target_coordinates, vector_velocities, vector_
 
     print("MPC modelling has finished. Waiting for plots...")
     print()
-    # Plot barrier (Polygon)
-    add_plot_polygon([[-1.8, -2], [-2, -3], [-3, -4], [-5, -3], [-3, -1], [-1.8, -2]])
+    # # Plot barrier (Polygon)
+    # add_plot_polygon([[-1.8, -2], [-2, -3], [-3, -4], [-5, -3], [-3, -1], [-1.8, -2]])
 
     # Result trajectory
     plt.plot(result_trajectory_x, result_trajectory_y, 'r', linewidth=2)
-    # plt.plot(result_trajectory_x, result_trajectory_y, 'ro', linewidth=1)
+    plt.plot(result_trajectory_x, result_trajectory_y, 'ro', linewidth=1)
 
     # Show result plots
     plt.axes().set_aspect(1)
@@ -402,4 +392,23 @@ def math_mpc(initial_coordinates, target_coordinates, vector_velocities, vector_
     print("Plots are ready.")
 
 
-math_mpc([0, 0, math.pi, 0, 0], [-5, -5], vector_v, vector_beta)
+plt.figure(1)
+plt.grid()
+plt.xlabel("Coordinate X")
+plt.ylabel("Coordinate Y")
+plt.title(r'$\beta_{max} = $' + str(beta_max) + '  ' + r'$v_{max} = $' + str(v_max) + '  ' + r'$\varphi_0 = $' + str(
+    phi_0) + ' ' + r'$ L = $' + str(L))
+
+t = 0
+
+# Stack with coordinates for optimal trajectory
+optimal_trajectory = [0]
+result_trajectory_x = [x_0]
+result_trajectory_y = [y_0]
+result_trajectory_phi = [phi_0]
+optimal_criterion = control_criterion([x_0, y_0, phi_0])
+result_v = 0
+result_beta = 0
+m = 0  # For optimizing finishing
+
+math_mpc([0, 0, math.pi, 0, 0], [-1, -5])
