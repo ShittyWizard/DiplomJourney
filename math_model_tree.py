@@ -1,5 +1,6 @@
 import time
 
+from matplotlib.animation import FuncAnimation
 from matplotlib.patches import Polygon
 from scipy import *
 import matplotlib.pyplot as plt
@@ -287,10 +288,21 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _target_x, _target_
 
             predicted_trajectory_x = [optimal_trajectory[0][0][0], optimal_trajectory[0][1][0],
                                       optimal_trajectory[0][2][0]]
+            predicted_trajectory_x_anim0.append(predicted_trajectory_x[0])
+            predicted_trajectory_x_anim1.append(predicted_trajectory_x[1])
+            predicted_trajectory_x_anim2.append(predicted_trajectory_x[2])
+
             predicted_trajectory_y = [optimal_trajectory[0][0][1], optimal_trajectory[0][1][1],
                                       optimal_trajectory[0][2][1]]
+            predicted_trajectory_y_anim0.append(predicted_trajectory_y[0])
+            predicted_trajectory_y_anim1.append(predicted_trajectory_y[1])
+            predicted_trajectory_y_anim2.append(predicted_trajectory_y[2])
+
             predicted_trajectory_phi = [optimal_trajectory[0][0][2], optimal_trajectory[0][1][2],
                                         optimal_trajectory[0][2][2]]
+            predicted_trajectory_phi_anim0.append(predicted_trajectory_phi[0])
+            predicted_trajectory_phi_anim1.append(predicted_trajectory_phi[1])
+            predicted_trajectory_phi_anim2.append(predicted_trajectory_phi[2])
 
             result_x = predicted_trajectory_x[0]
             result_y = predicted_trajectory_y[0]
@@ -320,11 +332,6 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _target_x, _target_
                     is_on_target(predicted_trajectory_x[1], predicted_trajectory_y[1], x_t, y_t)[1]))
                 m += 1
 
-            if need_scatter:
-                plt.scatter(field_x_1, field_y_1, color='g', alpha=0.2)
-                plt.scatter(field_x_2, field_y_2, color='b', alpha=0.2)
-                plt.scatter(field_x_3, field_y_3, color='r', alpha=0.2)
-
             result_trajectory_x.append(result_x)
             result_trajectory_y.append(result_y)
             result_trajectory_phi.append(result_beta)
@@ -353,7 +360,7 @@ need_scatter = False
 
 
 def math_mpc(initial_coordinates, target_coordinates):
-    global x, y, phi, x_t, y_t, v, beta, recursive, need_scatter
+    global x, y, phi, x_t, y_t, v, beta, recursive, need_scatter, p
     print("Start MPC modelling... ")
     print()
     p = 1
@@ -398,28 +405,12 @@ def math_mpc(initial_coordinates, target_coordinates):
 
     print("MPC modelling has finished. Waiting for plots...")
     print()
-    # # Plot barrier (Polygon)
-    # add_plot_polygon([[-1.8, -2], [-2, -3], [-3, -4], [-5, -3], [-3, -1], [-1.8, -2]])
 
-    # Result trajectory
-    plt.plot(result_trajectory_x, result_trajectory_y, 'r', linewidth=2)
-    plt.plot(result_trajectory_x, result_trajectory_y, 'ro', linewidth=1)
-
-    # Show result plots
-    plt.axes().set_aspect(1)
-    plt.show()
     print("Plots are ready.")
 
 
-plt.figure(1)
-plt.grid()
-plt.xlabel("Coordinate X")
-plt.ylabel("Coordinate Y")
-plt.title(r'$\beta_{max} = $' + str(beta_max) + '  ' + r'$v_{max} = $' + str(v_max) + '  ' + r'$\varphi_0 = $' + str(
-    phi_0) + ' ' + r'$ L = $' + str(L))
-
 t = 0
-
+dt = 0.1
 # Stack with coordinates for optimal trajectory
 optimal_trajectory = [0]
 result_trajectory_x = [x_0]
@@ -430,4 +421,67 @@ result_v = 0
 result_beta = 0
 m = 0  # For optimizing finishing
 
-math_mpc([0, 0, math.pi, 0, 0], [-0.5, -0.5])
+predicted_trajectory_x_anim0 = []
+predicted_trajectory_y_anim0 = []
+predicted_trajectory_phi_anim0 = []
+
+predicted_trajectory_x_anim1 = []
+predicted_trajectory_y_anim1 = []
+predicted_trajectory_phi_anim1 = []
+
+predicted_trajectory_x_anim2 = []
+predicted_trajectory_y_anim2 = []
+predicted_trajectory_phi_anim2 = []
+
+math_mpc([0, 0, math.pi, 0, 0], [-1, -1])
+
+# Animation
+fig = plt.figure()
+fig.set_dpi(100)
+ax = plt.axes()
+ax.set_aspect(1)
+plt.grid()
+plt.xlabel("Coordinate X")
+plt.ylabel("Coordinate Y")
+plt.title(r'$\beta_{max} = $' + str(beta_max) + '  ' + r'$v_{max} = $' + str(v_max) + '  ' + r'$\varphi_0 = $' + str(
+    phi_0) + ' ' + r'$ L = $' + str(L))
+xdata, ydata = [], []
+
+predicted_position, = plt.plot([], [], 'go', animated=True)
+predicted_line, = plt.plot([], [], 'g', animated=True)
+previous_position, = plt.plot([], [], 'co', animated=True)
+previous_line, = plt.plot([], [], 'c', animated=True)
+main_pos, = plt.plot([], [], 'ro', animated=True)
+plt.plot(result_trajectory_x, result_trajectory_y, 'r', linewidth=1)
+
+
+# Plot barrier (Polygon)
+# add_plot_polygon([[-1.8, -2], [-2, -3], [-3, -4], [-5, -3], [-3, -1], [-1.8, -2]])
+
+def init():
+    ax.set_xlim(x_t - 0.1, x_0 + 0.1)
+    ax.set_ylim(y_t - 0.1, y_0 + 0.1)
+    return main_pos, predicted_position, predicted_line, previous_position, previous_line
+
+
+def animate(i):
+    predicted_position.set_data(
+        [predicted_trajectory_x_anim0[i], predicted_trajectory_x_anim1[i], predicted_trajectory_x_anim2[i]],
+        [predicted_trajectory_y_anim0[i], predicted_trajectory_y_anim1[i], predicted_trajectory_y_anim2[i]])
+    predicted_line.set_data(
+        [result_trajectory_x[i], predicted_trajectory_x_anim0[i], predicted_trajectory_x_anim1[i],
+         predicted_trajectory_x_anim2[i]],
+        [result_trajectory_y[i], predicted_trajectory_y_anim0[i], predicted_trajectory_y_anim1[i],
+         predicted_trajectory_y_anim2[i]])
+    if i >= 2:
+        previous_position.set_data([result_trajectory_x[i - 2], result_trajectory_x[i - 1]],
+                                   [result_trajectory_y[i - 2], result_trajectory_y[i - 1]])
+        previous_line.set_data([result_trajectory_x[i - 2], result_trajectory_x[i - 1]],
+                               [result_trajectory_y[i - 2], result_trajectory_y[i - 1]])
+    main_pos.set_data(result_trajectory_x[i], result_trajectory_y[i])
+    return predicted_position, predicted_line, previous_position, previous_line, main_pos,
+
+
+plot_from_actual_to_target(x_0, y_0, phi_0, x_t, y_t)
+ani = FuncAnimation(fig, animate, p, init_func=init, blit=True)
+plt.show()
