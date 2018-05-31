@@ -6,7 +6,7 @@ eps_beta = 0.1
 L = 0.5
 
 # Constraints
-delta_t = 0.1
+delta_t = 0.05
 
 beta_max = math.radians(60)
 delta_beta = math.radians(1)
@@ -21,7 +21,7 @@ v_acc_max = 0.5
 # Initial conditions
 x_0 = 0
 y_0 = 0
-phi_0 = math.pi
+phi_0 = math.pi * 5/6
 
 # Target
 x_t = -1

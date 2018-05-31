@@ -236,10 +236,10 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _target_x, _target_
     field_y_3 = []
     t += delta_t
 
-    if need_scatter:
-        plt.quiver(result_trajectory_x[len(result_trajectory_x) - 1], result_trajectory_y[len(result_trajectory_y) - 1],
-                   cos(result_trajectory_phi[len(result_trajectory_phi) - 1]),
-                   sin(result_trajectory_phi[len(result_trajectory_phi) - 1]), pivot='middle')
+    # if need_scatter:
+    #     plt.quiver(result_trajectory_x[len(result_trajectory_x) - 1], result_trajectory_y[len(result_trajectory_y) - 1],
+    #                cos(result_trajectory_phi[len(result_trajectory_phi) - 1]),
+    #                sin(result_trajectory_phi[len(result_trajectory_phi) - 1]), pivot='middle')
     start = time.time()
     for i in range(prediction_horizon):
         if i == 0:
@@ -433,8 +433,6 @@ predicted_trajectory_x_anim2 = []
 predicted_trajectory_y_anim2 = []
 predicted_trajectory_phi_anim2 = []
 
-math_mpc([0, 0, math.pi, 0, 0], [-1, -1])
-
 # Animation
 fig = plt.figure()
 fig.set_dpi(100)
@@ -446,6 +444,9 @@ plt.ylabel("Coordinate Y")
 plt.title(r'$\beta_{max} = $' + str(beta_max) + '  ' + r'$v_{max} = $' + str(v_max) + '  ' + r'$\varphi_0 = $' + str(
     phi_0) + ' ' + r'$ L = $' + str(L))
 xdata, ydata = [], []
+
+# MODELLING!
+math_mpc([0, 0, math.pi * 5 / 6, 0, 0], [-1, -1])
 
 predicted_position, = plt.plot([], [], 'go', animated=True)
 predicted_line, = plt.plot([], [], 'g', animated=True)
@@ -483,5 +484,6 @@ def animate(i):
 
 
 plot_from_actual_to_target(x_0, y_0, phi_0, x_t, y_t)
-ani = FuncAnimation(fig, animate, p, init_func=init, blit=True)
-plt.show()
+ani = FuncAnimation(fig, animate, p, init_func=init, blit=True, repeat=True, repeat_delay=100)
+#plt.show()
+ani.save('animation_1.gif', writer='imagemagick', dpi=100, fps=10)
