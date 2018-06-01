@@ -121,6 +121,7 @@ def plot_from_actual_to_target(initial_x, initial_y, initial_phi, target_x, targ
 
 
 def turn_left(actual_x, actual_y, actual_phi, distance, actual_velocity):
+    global v
     if math.pi / 2 <= actual_phi <= 3 * math.pi / 2:
         if actual_phi <= math.pi:
             # \ |
@@ -143,14 +144,16 @@ def turn_left(actual_x, actual_y, actual_phi, distance, actual_velocity):
             temp_phi = actual_phi
             target_x = actual_x - distance * sin(temp_phi) + radius_u_turn * cos(temp_phi)
             target_y = actual_y + distance * cos(temp_phi) + radius_u_turn * sin(temp_phi)
-    delta_teta = abs(actual_phi - math.atan((target_y - actual_y) / (target_x - actual_x)))
-    slow_down(actual_velocity, delta_teta)
+    delta_teta = math.pi / 2
+    print("Delta teta: " + str(delta_teta))
+    v = slow_down(actual_velocity, delta_teta)
     new_target(actual_x, actual_y, actual_phi, target_x, target_y)
     print("Turning left...")
     print()
 
 
 def turn_right(actual_x, actual_y, actual_phi, distance, actual_velocity):
+    global v
     if math.pi / 2 <= actual_phi <= 3 * math.pi / 2:
         if actual_phi <= math.pi:
             # \ |
@@ -173,8 +176,9 @@ def turn_right(actual_x, actual_y, actual_phi, distance, actual_velocity):
             temp_phi = actual_phi
             target_x = actual_x + distance * sin(temp_phi) + radius_u_turn * cos(temp_phi)
             target_y = actual_y - distance * cos(temp_phi) + radius_u_turn * sin(temp_phi)
-    delta_teta = abs(actual_phi - math.atan((target_y - actual_y) / (target_x - actual_x)))
-    slow_down(actual_velocity, delta_teta)
+    delta_teta = math.pi / 2
+    print("Delta teta: " + str(delta_teta))
+    v = slow_down(actual_velocity, delta_teta)
     new_target(actual_x, actual_y, actual_phi, target_x, target_y)
     print("Turning right...")
     print()
@@ -190,14 +194,16 @@ def move_forward(actual_x, actual_y, actual_phi, distance):
 # Angle teta from 0 to 90 degrees
 def slow_down(actual_velocity, delta_teta):
     vector_velocities = vector_of_velocities(actual_velocity)
+    temp = 10
     if abs(delta_teta) < math.radians(10):
         velocity = actual_velocity
     else:
-        velocity = vector_velocities[
-            searchsorted(vector_velocities, actual_velocity * (1 - delta_teta * (4 / 3 * math.pi)))]
-    print("Actual velocity was: " + str(actual_velocity))
-    print("Vector velocity: " + str(vector_velocities))
-    print("New velocity: " + str(velocity))
+        velocity = actual_velocity * (1 - delta_teta * (4 / 3 * math.pi))
+        print("New velocity: " + str(velocity))
+        for v_ in vector_velocities:
+            if abs(v_ - velocity) < temp:
+                velocity = v_
+                temp = abs(v_ - velocity)
     return velocity
 
 
@@ -254,10 +260,6 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _target_x, _target_
     field_y_3 = []
     t += delta_t
 
-    # if need_scatter:
-    #     plt.quiver(result_trajectory_x[len(result_trajectory_x) - 1], result_trajectory_y[len(result_trajectory_y) - 1],
-    #                cos(result_trajectory_phi[len(result_trajectory_phi) - 1]),
-    #                sin(result_trajectory_phi[len(result_trajectory_phi) - 1]), pivot='middle')
     start = time.time()
     for i in range(prediction_horizon):
         if i == 0:
@@ -297,6 +299,7 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _target_x, _target_
                                                    global_coordinates[global_coordinates.get_index_of_parent(j)[0]],
                                                    global_coordinates[j]])
                         result_v = velocity
+                        result_trajectory_v.append(velocity)
                         result_beta = angle
                         optimal_criterion = control_criterion(temp2)
                     j += 1
@@ -363,7 +366,7 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _target_x, _target_
 
 def add_plot_polygon(coordinates_of_vertexes):
     barrier_polygon = Polygon(coordinates_of_vertexes, fill=False, hatch='//',
-                              edgecolor='black', linewidth='3')
+                              edgecolor='black', linewidth='1')
     plt.axes().add_patch(barrier_polygon)
 
 
@@ -415,6 +418,14 @@ def math_mpc(initial_coordinates, target_coordinates):
             break
         elif x == x_previous and y == y_previous:
             recursive = True
+        if p == 40:
+            turn_left(x, y, phi, 2, v)
+            plot_from_actual_to_target(x, y, phi, x_t, y_t)
+        if p == 70:
+            turn_right(x, y, phi, 2, v)
+            plot_from_actual_to_target(x, y, phi, x_t, y_t)
+        if p == 90:
+            new_target(x, y, phi, -3, -3)
         x_previous = x
         y_previous = y
         print("Iteration number = " + str(p))
@@ -434,6 +445,7 @@ optimal_trajectory = [0]
 result_trajectory_x = [x_0]
 result_trajectory_y = [y_0]
 result_trajectory_phi = [phi_0]
+result_trajectory_v = [0]
 optimal_criterion = control_criterion([x_0, y_0, phi_0])
 result_v = 0
 result_beta = 0
@@ -452,8 +464,10 @@ predicted_trajectory_y_anim2 = []
 predicted_trajectory_phi_anim2 = []
 
 # Animation
+plt.figure(figsize=(20, 10))
 fig = plt.figure()
 fig.set_dpi(100)
+
 ax = plt.axes()
 ax.set_aspect(1)
 plt.grid()
@@ -466,6 +480,7 @@ xdata, ydata = [], []
 # MODELLING!
 math_mpc([0, 0, math.pi * 5 / 6, 0, 0], [-2, -2])
 
+add_plot_polygon([[-0.5, -1], [-1, -1.9], [-2, -2.2], [-3, -2], [-2, -0.5], [-0.5, -1]])
 predicted_position, = plt.plot([], [], 'go', animated=True)
 predicted_line, = plt.plot([], [], 'g', animated=True)
 previous_position, = plt.plot([], [], 'co', animated=True)
@@ -478,12 +493,11 @@ plt.plot(result_trajectory_x, result_trajectory_y, 'r', linewidth=1)
 # add_plot_polygon([[-1.8, -2], [-2, -3], [-3, -4], [-5, -3], [-3, -1], [-1.8, -2]])
 
 def init():
-    ax.set_xlim(x_t - 0.1, x_0 + 0.1)
-    ax.set_ylim(y_t - 0.1, y_0 + 0.1)
-    return main_pos, predicted_position, predicted_line, previous_position, previous_line
+    return main_pos, predicted_position, predicted_line, previous_position, previous_line,
 
 
 def animate(i):
+    main_pos.set_data(result_trajectory_x[i], result_trajectory_y[i])
     predicted_position.set_data(
         [predicted_trajectory_x_anim0[i], predicted_trajectory_x_anim1[i], predicted_trajectory_x_anim2[i]],
         [predicted_trajectory_y_anim0[i], predicted_trajectory_y_anim1[i], predicted_trajectory_y_anim2[i]])
@@ -495,13 +509,13 @@ def animate(i):
     if i >= 2:
         previous_position.set_data([result_trajectory_x[i - 2], result_trajectory_x[i - 1]],
                                    [result_trajectory_y[i - 2], result_trajectory_y[i - 1]])
-        previous_line.set_data([result_trajectory_x[i - 2], result_trajectory_x[i - 1]],
-                               [result_trajectory_y[i - 2], result_trajectory_y[i - 1]])
-    main_pos.set_data(result_trajectory_x[i], result_trajectory_y[i])
+    previous_line.set_data([result_trajectory_x[i - 2], result_trajectory_x[i - 1]],
+                           [result_trajectory_y[i - 2], result_trajectory_y[i - 1]])
+
     return predicted_position, predicted_line, previous_position, previous_line, main_pos,
 
 
 plot_from_actual_to_target(x_0, y_0, phi_0, x_t, y_t)
 ani = FuncAnimation(fig, animate, p, init_func=init, blit=True, repeat=True, repeat_delay=100)
 # plt.show()
-ani.save('animation_1.gif', writer='imagemagick', dpi=100, fps=20)
+ani.save('animation_2.gif', writer='imagemagick', dpi=100, fps=20)
