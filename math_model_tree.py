@@ -120,7 +120,7 @@ def plot_from_actual_to_target(initial_x, initial_y, initial_phi, target_x, targ
     plt.quiver(initial_x, initial_y, cos(initial_phi), sin(initial_phi), pivot='middle')
 
 
-def turn_left(actual_x, actual_y, actual_phi, distance):
+def turn_left(actual_x, actual_y, actual_phi, distance, actual_velocity):
     if math.pi / 2 <= actual_phi <= 3 * math.pi / 2:
         if actual_phi <= math.pi:
             # \ |
@@ -143,12 +143,14 @@ def turn_left(actual_x, actual_y, actual_phi, distance):
             temp_phi = actual_phi
             target_x = actual_x - distance * sin(temp_phi) + radius_u_turn * cos(temp_phi)
             target_y = actual_y + distance * cos(temp_phi) + radius_u_turn * sin(temp_phi)
+    delta_teta = abs(actual_phi - math.atan((target_y - actual_y) / (target_x - actual_x)))
+    slow_down(actual_velocity, delta_teta)
     new_target(actual_x, actual_y, actual_phi, target_x, target_y)
     print("Turning left...")
     print()
 
 
-def turn_right(actual_x, actual_y, actual_phi, distance):
+def turn_right(actual_x, actual_y, actual_phi, distance, actual_velocity):
     if math.pi / 2 <= actual_phi <= 3 * math.pi / 2:
         if actual_phi <= math.pi:
             # \ |
@@ -171,6 +173,8 @@ def turn_right(actual_x, actual_y, actual_phi, distance):
             temp_phi = actual_phi
             target_x = actual_x + distance * sin(temp_phi) + radius_u_turn * cos(temp_phi)
             target_y = actual_y - distance * cos(temp_phi) + radius_u_turn * sin(temp_phi)
+    delta_teta = abs(actual_phi - math.atan((target_y - actual_y) / (target_x - actual_x)))
+    slow_down(actual_velocity, delta_teta)
     new_target(actual_x, actual_y, actual_phi, target_x, target_y)
     print("Turning right...")
     print()
@@ -181,6 +185,20 @@ def move_forward(actual_x, actual_y, actual_phi, distance):
     target_x = actual_x + distance * cos(actual_phi)
     target_y = actual_y + distance * sin(actual_phi)
     new_target(actual_x, actual_y, actual_phi, target_x, target_y)
+
+
+# Angle teta from 0 to 90 degrees
+def slow_down(actual_velocity, delta_teta):
+    vector_velocities = vector_of_velocities(actual_velocity)
+    if abs(delta_teta) < math.radians(10):
+        velocity = actual_velocity
+    else:
+        velocity = vector_velocities[
+            searchsorted(vector_velocities, actual_velocity * (1 - delta_teta * (4 / 3 * math.pi)))]
+    print("Actual velocity was: " + str(actual_velocity))
+    print("Vector velocity: " + str(vector_velocities))
+    print("New velocity: " + str(velocity))
+    return velocity
 
 
 def vector_of_velocities(actual_velocity):
@@ -446,7 +464,7 @@ plt.title(r'$\beta_{max} = $' + str(beta_max) + '  ' + r'$v_{max} = $' + str(v_m
 xdata, ydata = [], []
 
 # MODELLING!
-math_mpc([0, 0, math.pi * 5 / 6, 0, 0], [-1, -1])
+math_mpc([0, 0, math.pi * 5 / 6, 0, 0], [-2, -2])
 
 predicted_position, = plt.plot([], [], 'go', animated=True)
 predicted_line, = plt.plot([], [], 'g', animated=True)
@@ -485,5 +503,5 @@ def animate(i):
 
 plot_from_actual_to_target(x_0, y_0, phi_0, x_t, y_t)
 ani = FuncAnimation(fig, animate, p, init_func=init, blit=True, repeat=True, repeat_delay=100)
-#plt.show()
-ani.save('animation_1.gif', writer='imagemagick', dpi=100, fps=10)
+# plt.show()
+ani.save('animation_1.gif', writer='imagemagick', dpi=100, fps=20)
