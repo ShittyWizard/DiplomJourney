@@ -109,6 +109,7 @@ def new_target(actual_x, actual_y, actual_phi, target_x, target_y):
     x_0 = actual_x
     y_0 = actual_y
     phi_0 = actual_phi
+    plot_from_actual_to_target(actual_x, actual_y, actual_phi, target_x, target_y)
     print("New target: " + str(x_t) + " " + str(y_t))
 
 
@@ -211,11 +212,7 @@ def vector_of_velocities(actual_velocity):
     vector_velocities = []
     for i in range(1 + 2 * int((v_acc_max * delta_t) / delta_v)):
         possible_velocity = actual_velocity + delta_v * (i - (v_acc_max * delta_t) / delta_v)
-        if possible_velocity < 0:
-            print(".")
-        elif possible_velocity > v_max:
-            print(".")
-        else:
+        if (not possible_velocity < 0) and (not possible_velocity > v_max):
             vector_velocities.append(possible_velocity)
     return vector_velocities
 
@@ -236,7 +233,7 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _target_x, _target_
                        _vector_beta):
     global optimal_trajectory, optimal_criterion
     global result_trajectory_x, result_trajectory_y, result_trajectory_phi
-    global t, m
+    global t, m, time_arr_for_plotting
     global result_v, result_beta
     global recursive, need_scatter
 
@@ -258,8 +255,9 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _target_x, _target_
 
     field_x_3 = []
     field_y_3 = []
-    t += delta_t
 
+    t += delta_t
+    time_arr_for_plotting.append(t)
     start = time.time()
     for i in range(prediction_horizon):
         if i == 0:
@@ -309,21 +307,21 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _target_x, _target_
 
             predicted_trajectory_x = [optimal_trajectory[0][0][0], optimal_trajectory[0][1][0],
                                       optimal_trajectory[0][2][0]]
-            predicted_trajectory_x_anim0.append(predicted_trajectory_x[0])
-            predicted_trajectory_x_anim1.append(predicted_trajectory_x[1])
-            predicted_trajectory_x_anim2.append(predicted_trajectory_x[2])
+            # predicted_trajectory_x_anim0.append(predicted_trajectory_x[0])
+            # predicted_trajectory_x_anim1.append(predicted_trajectory_x[1])
+            # predicted_trajectory_x_anim2.append(predicted_trajectory_x[2])
 
             predicted_trajectory_y = [optimal_trajectory[0][0][1], optimal_trajectory[0][1][1],
                                       optimal_trajectory[0][2][1]]
-            predicted_trajectory_y_anim0.append(predicted_trajectory_y[0])
-            predicted_trajectory_y_anim1.append(predicted_trajectory_y[1])
-            predicted_trajectory_y_anim2.append(predicted_trajectory_y[2])
+            # predicted_trajectory_y_anim0.append(predicted_trajectory_y[0])
+            # predicted_trajectory_y_anim1.append(predicted_trajectory_y[1])
+            # predicted_trajectory_y_anim2.append(predicted_trajectory_y[2])
 
             predicted_trajectory_phi = [optimal_trajectory[0][0][2], optimal_trajectory[0][1][2],
                                         optimal_trajectory[0][2][2]]
-            predicted_trajectory_phi_anim0.append(predicted_trajectory_phi[0])
-            predicted_trajectory_phi_anim1.append(predicted_trajectory_phi[1])
-            predicted_trajectory_phi_anim2.append(predicted_trajectory_phi[2])
+            # predicted_trajectory_phi_anim0.append(predicted_trajectory_phi[0])
+            # predicted_trajectory_phi_anim1.append(predicted_trajectory_phi[1])
+            # predicted_trajectory_phi_anim2.append(predicted_trajectory_phi[2])
 
             result_x = predicted_trajectory_x[0]
             result_y = predicted_trajectory_y[0]
@@ -381,7 +379,7 @@ need_scatter = False
 
 
 def math_mpc(initial_coordinates, target_coordinates):
-    global x, y, phi, x_t, y_t, v, beta, recursive, need_scatter, p
+    global x, y, phi, x_t, y_t, v, beta, recursive, need_scatter, p, time_arr_for_plotting
     print("Start MPC modelling... ")
     print()
     p = 1
@@ -420,10 +418,8 @@ def math_mpc(initial_coordinates, target_coordinates):
             recursive = True
         if p == 40:
             turn_left(x, y, phi, 2, v)
-            plot_from_actual_to_target(x, y, phi, x_t, y_t)
         if p == 70:
             turn_right(x, y, phi, 2, v)
-            plot_from_actual_to_target(x, y, phi, x_t, y_t)
         if p == 90:
             new_target(x, y, phi, -3, -3)
         x_previous = x
@@ -439,37 +435,47 @@ def math_mpc(initial_coordinates, target_coordinates):
 
 
 t = 0
-dt = 0.1
+dt = delta_t
+time_arr_for_plotting = [t]
+
 # Stack with coordinates for optimal trajectory
 optimal_trajectory = [0]
-result_trajectory_x = [x_0]
-result_trajectory_y = [y_0]
+
 result_trajectory_phi = [phi_0]
+
+result_trajectory_x = [x_0]
+result_x_velocity = []
+result_x_acceleration = []
+
+result_trajectory_y = [y_0]
+result_y_velocity = []
+result_y_acceleration = []
+
 result_trajectory_v = [0]
 optimal_criterion = control_criterion([x_0, y_0, phi_0])
 result_v = 0
 result_beta = 0
 m = 0  # For optimizing finishing
 
-predicted_trajectory_x_anim0 = []
-predicted_trajectory_y_anim0 = []
-predicted_trajectory_phi_anim0 = []
+# For animation
+# predicted_trajectory_x_anim0 = []
+# predicted_trajectory_y_anim0 = []
+# predicted_trajectory_phi_anim0 = []
+#
+# predicted_trajectory_x_anim1 = []
+# predicted_trajectory_y_anim1 = []
+# predicted_trajectory_phi_anim1 = []
+#
+# predicted_trajectory_x_anim2 = []
+# predicted_trajectory_y_anim2 = []
+# predicted_trajectory_phi_anim2 = []
 
-predicted_trajectory_x_anim1 = []
-predicted_trajectory_y_anim1 = []
-predicted_trajectory_phi_anim1 = []
+# Plotting
+fig1 = plt.figure(1)
+fig1.set_dpi(100)
 
-predicted_trajectory_x_anim2 = []
-predicted_trajectory_y_anim2 = []
-predicted_trajectory_phi_anim2 = []
-
-# Animation
-plt.figure(figsize=(20, 10))
-fig = plt.figure()
-fig.set_dpi(100)
-
-ax = plt.axes()
-ax.set_aspect(1)
+ax1 = plt.axes()
+ax1.set_aspect(1)
 plt.grid()
 plt.xlabel("Coordinate X")
 plt.ylabel("Coordinate Y")
@@ -482,6 +488,68 @@ math_mpc([0, 0, math.pi * 5 / 6, 0, 0], [-2, -2])
 
 add_plot_polygon([[-0.5, -1], [-1, -1.9], [-2, -2.2], [-3, -2], [-2, -0.5], [-0.5, -1]])
 
+plt.plot(result_trajectory_x, result_trajectory_y, 'r', linewidth=1)
+
+# -------------------------------------------------------------------
+
+# TODO: X(t) and Y(t), Velocities(t), Angle(t)
+
+# Plots for X coordinate
+fig2 = plt.figure(2)
+fig2.set_dpi(100)
+
+ax2 = plt.axes()
+ax2.set_aspect(1)
+plt.grid()
+
+x_coord = plt.subplot(311)
+x_coord.set_xlabel("Time")
+x_coord.set_ylabel("Coordinate X")
+# plt.plot(time_arr_for_plotting, result_trajectory_x, 'ro', linewidth=1)
+plt.plot(time_arr_for_plotting, result_trajectory_x, 'r', linewidth=1)
+
+# x_velocity = plt.subplot(312)
+# x_velocity.set_xlabel("Time")
+# x_velocity.set_ylabel("X-Axis speed")
+# plt.plot(time_arr_for_plotting, result_x_velocity, 'ro', linewidth=1)
+# plt.plot(time_arr_for_plotting, result_x_velocity, 'r', linewidth=1)
+#
+# x_acceleration = plt.subplot(313)
+# x_acceleration.set_xlabel("Time")
+# x_acceleration.set_ylabel("X-Axis acceleration")
+# plt.plot(time_arr_for_plotting, result_x_acceleration, 'ro', linewidth=1)
+# plt.plot(time_arr_for_plotting, result_x_acceleration, 'r', linewidth=1)
+
+# ---------------------------------------------------------------------
+
+# Plots for Y coordinate
+fig3 = plt.figure(3)
+fig3.set_dpi(100)
+
+ax3 = plt.axes()
+ax3.set_aspect(1)
+plt.grid()
+
+y_coord = plt.subplot(311)
+y_coord.set_xlabel("Time")
+y_coord.set_ylabel("Coordinate Y")
+# plt.plot(time_arr_for_plotting, result_trajectory_y, 'ro', linewidth=1)
+plt.plot(time_arr_for_plotting, result_trajectory_y, 'r', linewidth=1)
+
+# y_velocity = plt.subplot(312)
+# y_velocity.set_xlabel("Time")
+# y_velocity.set_ylabel("Y-Axis speed")
+# plt.plot(time_arr_for_plotting, result_y_velocity, 'ro', linewidth=1)
+# plt.plot(time_arr_for_plotting, result_y_velocity, 'r', linewidth=1)
+#
+# y_acceleration = plt.subplot(313)
+# y_acceleration.set_xlabel("Time")
+# y_acceleration.set_ylabel("Y-Axis acceleration")
+# plt.plot(time_arr_for_plotting, result_y_acceleration, 'ro', linewidth=1)
+# plt.plot(time_arr_for_plotting, result_y_acceleration, 'r', linewidth=1)
+
+# -----------------------------------------------------------------------
+plt.show()
 """
 ANIMATION
 """
