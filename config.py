@@ -14,8 +14,8 @@ beta_acc_max = math.radians(400)
 
 # Velocity per second
 v_max = 1
-# For example: for 1 second vector of velocities could be [0, 0.02, 0.04, 0.06, 0.08, 0.1]
-delta_v = 0.01
+v_min = 0.4
+delta_v = 0.005
 v_acc_max = 0.5
 
 # Initial conditions
