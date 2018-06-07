@@ -236,6 +236,7 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _target_x, _target_
     global t, m, time_arr_for_plotting
     global result_v, result_beta
     global recursive, need_scatter
+    global result_trajectory_v, result_trajectory_beta, result_trajectory_angle_speed
 
     size_max_1 = size(_vector_beta) * size(_vector_v)
     size_max_2 = size_max_1 * size_max_1
@@ -353,7 +354,11 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _target_x, _target_
 
             result_trajectory_x.append(result_x)
             result_trajectory_y.append(result_y)
-            result_trajectory_phi.append(result_beta)
+            result_trajectory_phi.append(result_phi)
+            result_trajectory_v.append(result_v)
+            result_trajectory_beta.append(result_beta)
+            result_trajectory_angle_speed.append((result_v / L) * tan(result_beta))
+
             print()
             print("Now I'm here - x : " + str(result_x) + ' y: ' + str(result_y) + ' v: ' + str(
                 result_v) + ' beta: ' + str(math.degrees(result_beta)))
@@ -380,6 +385,9 @@ need_scatter = False
 
 def math_mpc(initial_coordinates, target_coordinates):
     global x, y, phi, x_t, y_t, v, beta, recursive, need_scatter, p, time_arr_for_plotting
+    global result_x_velocity, result_x_acceleration
+    global result_y_velocity, result_y_acceleration
+    global result_trajectory_v, result_trajectory_beta, result_trajectory_angle_speed
     print("Start MPC modelling... ")
     print()
     p = 1
@@ -404,13 +412,24 @@ def math_mpc(initial_coordinates, target_coordinates):
     while not is_on_target(x, y, x_t, y_t)[0]:
         vector_velocities = vector_of_velocities(v)
         vector_beta_angles = vector_of_beta_angles(beta)
+        previous_v = v
+
         coordinates = predictive_control(x, y, phi, x_t, y_t, vector_velocities, vector_beta_angles)
+
         x = coordinates[0]
         y = coordinates[1]
         phi = coordinates[2]
         v = coordinates[3]
         beta = coordinates[4]
+
+        result_x_velocity.append(v * cos(phi))
+        result_x_acceleration.append(((v - previous_v) / delta_t) * cos(phi))
+
+        result_y_velocity.append(v * sin(phi))
+        result_y_acceleration.append(((v - previous_v) / delta_t) * sin(phi))
+
         need_scatter = False
+
         if recursive:
             print("Recursive error.")
             break
@@ -436,7 +455,7 @@ def math_mpc(initial_coordinates, target_coordinates):
 
 t = 0
 dt = delta_t
-time_arr_for_plotting = [t]
+time_arr_for_plotting = [0]
 
 # Stack with coordinates for optimal trajectory
 optimal_trajectory = [0]
@@ -444,17 +463,21 @@ optimal_trajectory = [0]
 result_trajectory_phi = [phi_0]
 
 result_trajectory_x = [x_0]
-result_x_velocity = []
-result_x_acceleration = []
+result_x_velocity = [0]
+result_x_acceleration = [0]
 
 result_trajectory_y = [y_0]
-result_y_velocity = []
-result_y_acceleration = []
+result_y_velocity = [0]
+result_y_acceleration = [0]
 
 result_trajectory_v = [0]
+result_trajectory_beta = [0]
+result_trajectory_angle_speed = [0]
+
 optimal_criterion = control_criterion([x_0, y_0, phi_0])
 result_v = 0
 result_beta = 0
+
 m = 0  # For optimizing finishing
 
 # For animation
@@ -492,7 +515,7 @@ plt.plot(result_trajectory_x, result_trajectory_y, 'r', linewidth=1)
 
 # -------------------------------------------------------------------
 
-# TODO: X(t) and Y(t), Velocities(t), Angle(t)
+# TODO: Constraints on plots for V_MAX, BETA_MAX, ANGLE_SPEED_MAX
 
 # Plots for X coordinate
 fig2 = plt.figure(2)
@@ -508,17 +531,19 @@ x_coord.set_ylabel("Coordinate X")
 # plt.plot(time_arr_for_plotting, result_trajectory_x, 'ro', linewidth=1)
 plt.plot(time_arr_for_plotting, result_trajectory_x, 'r', linewidth=1)
 
-# x_velocity = plt.subplot(312)
-# x_velocity.set_xlabel("Time")
-# x_velocity.set_ylabel("X-Axis speed")
+x_velocity = plt.subplot(312)
+x_velocity.set_xlabel("Time")
+x_velocity.set_ylabel("X-Axis speed")
 # plt.plot(time_arr_for_plotting, result_x_velocity, 'ro', linewidth=1)
-# plt.plot(time_arr_for_plotting, result_x_velocity, 'r', linewidth=1)
-#
-# x_acceleration = plt.subplot(313)
-# x_acceleration.set_xlabel("Time")
-# x_acceleration.set_ylabel("X-Axis acceleration")
+plt.plot(time_arr_for_plotting, result_x_velocity, 'r', linewidth=1)
+plt.plot(v_max)
+
+x_acceleration = plt.subplot(313)
+x_acceleration.set_xlabel("Time")
+x_acceleration.set_ylabel("X-Axis acceleration")
 # plt.plot(time_arr_for_plotting, result_x_acceleration, 'ro', linewidth=1)
-# plt.plot(time_arr_for_plotting, result_x_acceleration, 'r', linewidth=1)
+plt.plot(time_arr_for_plotting, result_x_acceleration, 'r', linewidth=1)
+plt.plot(v_acc_max)
 
 # ---------------------------------------------------------------------
 
@@ -528,7 +553,7 @@ fig3.set_dpi(100)
 
 ax3 = plt.axes()
 ax3.set_aspect(1)
-plt.grid()
+ax3.grid()
 
 y_coord = plt.subplot(311)
 y_coord.set_xlabel("Time")
@@ -536,19 +561,50 @@ y_coord.set_ylabel("Coordinate Y")
 # plt.plot(time_arr_for_plotting, result_trajectory_y, 'ro', linewidth=1)
 plt.plot(time_arr_for_plotting, result_trajectory_y, 'r', linewidth=1)
 
-# y_velocity = plt.subplot(312)
-# y_velocity.set_xlabel("Time")
-# y_velocity.set_ylabel("Y-Axis speed")
+y_velocity = plt.subplot(312)
+y_velocity.set_xlabel("Time")
+y_velocity.set_ylabel("Y-Axis speed")
 # plt.plot(time_arr_for_plotting, result_y_velocity, 'ro', linewidth=1)
-# plt.plot(time_arr_for_plotting, result_y_velocity, 'r', linewidth=1)
-#
-# y_acceleration = plt.subplot(313)
-# y_acceleration.set_xlabel("Time")
-# y_acceleration.set_ylabel("Y-Axis acceleration")
+plt.plot(time_arr_for_plotting, result_y_velocity, 'r', linewidth=1)
+plt.plot(v_max)
+
+y_acceleration = plt.subplot(313)
+y_acceleration.set_xlabel("Time")
+y_acceleration.set_ylabel("Y-Axis acceleration")
 # plt.plot(time_arr_for_plotting, result_y_acceleration, 'ro', linewidth=1)
-# plt.plot(time_arr_for_plotting, result_y_acceleration, 'r', linewidth=1)
+plt.plot(time_arr_for_plotting, result_y_acceleration, 'r', linewidth=1)
+plt.plot(v_acc_max)
 
 # -----------------------------------------------------------------------
+
+# Plot for velocity and "beta" angle
+
+fig4 = plt.figure(4)
+fig4.set_dpi(100)
+
+ax4 = plt.axes()
+ax4.set_aspect(1)
+ax4.grid()
+
+velocity = plt.subplot(311)
+velocity.set_xlabel("Time")
+velocity.set_ylabel("Speed")
+# plt.plot(time_arr_for_plotting, result_trajectory_v, 'r', linewidth=1)
+plt.plot(time_arr_for_plotting, v_max, 'b-', linewidth=1)
+
+beta_plot = plt.subplot(312)
+beta_plot.set_xlabel("Time")
+beta_plot.set_ylabel("Wheel turning angle")
+plt.plot(time_arr_for_plotting, result_trajectory_beta, 'r', linewidth=1)
+plt.plot(beta_max)
+
+angle_speed = plt.subplot(313)
+angle_speed.set_xlabel("Time")
+angle_speed.set_ylabel("Angle speed")
+plt.plot(time_arr_for_plotting, result_trajectory_angle_speed, 'r', linewidth=1)
+plt.plot((v_max / L) * tan(beta_max))
+
+# ----------------------------------------------------------------------
 plt.show()
 """
 ANIMATION

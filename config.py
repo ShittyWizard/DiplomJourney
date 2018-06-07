@@ -10,7 +10,7 @@ delta_t = 0.05
 
 beta_max = math.radians(60)
 delta_beta = math.radians(1)
-beta_acc_max = math.radians(200)
+beta_acc_max = math.radians(400)
 
 # Velocity per second
 v_max = 1
