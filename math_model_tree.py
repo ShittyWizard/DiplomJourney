@@ -481,41 +481,45 @@ xdata, ydata = [], []
 math_mpc([0, 0, math.pi * 5 / 6, 0, 0], [-2, -2])
 
 add_plot_polygon([[-0.5, -1], [-1, -1.9], [-2, -2.2], [-3, -2], [-2, -0.5], [-0.5, -1]])
-predicted_position, = plt.plot([], [], 'go', animated=True)
-predicted_line, = plt.plot([], [], 'g', animated=True)
-previous_position, = plt.plot([], [], 'co', animated=True)
-previous_line, = plt.plot([], [], 'c', animated=True)
-main_pos, = plt.plot([], [], 'ro', animated=True)
-plt.plot(result_trajectory_x, result_trajectory_y, 'r', linewidth=1)
 
-
-# Plot barrier (Polygon)
-# add_plot_polygon([[-1.8, -2], [-2, -3], [-3, -4], [-5, -3], [-3, -1], [-1.8, -2]])
-
-def init():
-    return main_pos, predicted_position, predicted_line, previous_position, previous_line,
-
-
-def animate(i):
-    main_pos.set_data(result_trajectory_x[i], result_trajectory_y[i])
-    predicted_position.set_data(
-        [predicted_trajectory_x_anim0[i], predicted_trajectory_x_anim1[i], predicted_trajectory_x_anim2[i]],
-        [predicted_trajectory_y_anim0[i], predicted_trajectory_y_anim1[i], predicted_trajectory_y_anim2[i]])
-    predicted_line.set_data(
-        [result_trajectory_x[i], predicted_trajectory_x_anim0[i], predicted_trajectory_x_anim1[i],
-         predicted_trajectory_x_anim2[i]],
-        [result_trajectory_y[i], predicted_trajectory_y_anim0[i], predicted_trajectory_y_anim1[i],
-         predicted_trajectory_y_anim2[i]])
-    if i >= 2:
-        previous_position.set_data([result_trajectory_x[i - 2], result_trajectory_x[i - 1]],
-                                   [result_trajectory_y[i - 2], result_trajectory_y[i - 1]])
-    previous_line.set_data([result_trajectory_x[i - 2], result_trajectory_x[i - 1]],
-                           [result_trajectory_y[i - 2], result_trajectory_y[i - 1]])
-
-    return predicted_position, predicted_line, previous_position, previous_line, main_pos,
-
-
-plot_from_actual_to_target(x_0, y_0, phi_0, x_t, y_t)
-ani = FuncAnimation(fig, animate, p, init_func=init, blit=True, repeat=True, repeat_delay=100)
-# plt.show()
-ani.save('animation_2.gif', writer='imagemagick', dpi=100, fps=20)
+"""
+ANIMATION
+"""
+# predicted_position, = plt.plot([], [], 'go', animated=True)
+# predicted_line, = plt.plot([], [], 'g', animated=True)
+# previous_position, = plt.plot([], [], 'co', animated=True)
+# previous_line, = plt.plot([], [], 'c', animated=True)
+# main_pos, = plt.plot([], [], 'ro', animated=True)
+# plt.plot(result_trajectory_x, result_trajectory_y, 'r', linewidth=1)
+#
+#
+# # Plot barrier (Polygon)
+# # add_plot_polygon([[-1.8, -2], [-2, -3], [-3, -4], [-5, -3], [-3, -1], [-1.8, -2]])
+#
+# def init():
+#     return main_pos, predicted_position, predicted_line, previous_position, previous_line,
+#
+#
+# def animate(i):
+#     main_pos.set_data(result_trajectory_x[i], result_trajectory_y[i])
+#     predicted_position.set_data(
+#         [predicted_trajectory_x_anim0[i], predicted_trajectory_x_anim1[i], predicted_trajectory_x_anim2[i]],
+#         [predicted_trajectory_y_anim0[i], predicted_trajectory_y_anim1[i], predicted_trajectory_y_anim2[i]])
+#     predicted_line.set_data(
+#         [result_trajectory_x[i], predicted_trajectory_x_anim0[i], predicted_trajectory_x_anim1[i],
+#          predicted_trajectory_x_anim2[i]],
+#         [result_trajectory_y[i], predicted_trajectory_y_anim0[i], predicted_trajectory_y_anim1[i],
+#          predicted_trajectory_y_anim2[i]])
+#     if i >= 2:
+#         previous_position.set_data([result_trajectory_x[i - 2], result_trajectory_x[i - 1]],
+#                                    [result_trajectory_y[i - 2], result_trajectory_y[i - 1]])
+#     previous_line.set_data([result_trajectory_x[i - 2], result_trajectory_x[i - 1]],
+#                            [result_trajectory_y[i - 2], result_trajectory_y[i - 1]])
+#
+#     return predicted_position, predicted_line, previous_position, previous_line, main_pos,
+#
+#
+# plot_from_actual_to_target(x_0, y_0, phi_0, x_t, y_t)
+# ani = FuncAnimation(fig, animate, p, init_func=init, blit=True, repeat=True, repeat_delay=100)
+# # plt.show()
+# ani.save('animation_2.gif', writer='imagemagick', dpi=100, fps=20)
