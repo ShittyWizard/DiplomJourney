@@ -298,7 +298,6 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _target_x, _target_
                                                    global_coordinates[global_coordinates.get_index_of_parent(j)[0]],
                                                    global_coordinates[j]])
                         result_v = velocity
-                        result_trajectory_v.append(velocity)
                         result_beta = angle
                         optimal_criterion = control_criterion(temp2)
                     j += 1
@@ -493,13 +492,24 @@ m = 0  # For optimizing finishing
 # predicted_trajectory_y_anim2 = []
 # predicted_trajectory_phi_anim2 = []
 
+v_max_vector = []
+v_max_vector_minus = []
+
+v_acc_max_vector = []
+v_acc_max_vector_minus = []
+
+beta_max_vector = []
+beta_max_vector_minus = []
+
+angle_speed_max_vector = []
+angle_speed_max_vector_minus = []
+
 # Plotting
 fig1 = plt.figure(1)
 fig1.set_dpi(100)
-
+plt.grid()
 ax1 = plt.axes()
 ax1.set_aspect(1)
-plt.grid()
 plt.xlabel("Coordinate X")
 plt.ylabel("Coordinate Y")
 plt.title(r'$\beta_{max} = $' + str(beta_max) + '  ' + r'$v_{max} = $' + str(v_max) + '  ' + r'$\varphi_0 = $' + str(
@@ -509,41 +519,55 @@ xdata, ydata = [], []
 # MODELLING!
 math_mpc([0, 0, math.pi * 5 / 6, 0, 0], [-2, -2])
 
+for item in time_arr_for_plotting:
+    v_max_vector.append(v_max)
+    v_max_vector_minus.append(-v_max)
+
+    v_acc_max_vector.append(v_acc_max)
+    v_acc_max_vector_minus.append(-v_acc_max)
+
+    beta_max_vector.append(beta_max)
+    beta_max_vector_minus.append(-beta_max)
+
+    angle_speed_max_vector.append((v_max / L) * tan(beta_max))
+    angle_speed_max_vector_minus.append(-(v_max / L) * tan(beta_max))
+
 add_plot_polygon([[-0.5, -1], [-1, -1.9], [-2, -2.2], [-3, -2], [-2, -0.5], [-0.5, -1]])
 
 plt.plot(result_trajectory_x, result_trajectory_y, 'r', linewidth=1)
 
 # -------------------------------------------------------------------
-
-# TODO: Constraints on plots for V_MAX, BETA_MAX, ANGLE_SPEED_MAX
-
 # Plots for X coordinate
 fig2 = plt.figure(2)
 fig2.set_dpi(100)
 
 ax2 = plt.axes()
 ax2.set_aspect(1)
-plt.grid()
 
 x_coord = plt.subplot(311)
+plt.grid()
 x_coord.set_xlabel("Time")
-x_coord.set_ylabel("Coordinate X")
+x_coord.set_ylabel("Coordinate X, m")
 # plt.plot(time_arr_for_plotting, result_trajectory_x, 'ro', linewidth=1)
 plt.plot(time_arr_for_plotting, result_trajectory_x, 'r', linewidth=1)
 
 x_velocity = plt.subplot(312)
+plt.grid()
 x_velocity.set_xlabel("Time")
-x_velocity.set_ylabel("X-Axis speed")
+x_velocity.set_ylabel("X-Axis speed, m/s")
 # plt.plot(time_arr_for_plotting, result_x_velocity, 'ro', linewidth=1)
 plt.plot(time_arr_for_plotting, result_x_velocity, 'r', linewidth=1)
-plt.plot(v_max)
+plt.plot(time_arr_for_plotting, v_max_vector, 'b-', linewidth=1)
+plt.plot(time_arr_for_plotting, v_max_vector_minus, 'b-', linewidth=1)
 
 x_acceleration = plt.subplot(313)
+plt.grid()
 x_acceleration.set_xlabel("Time")
-x_acceleration.set_ylabel("X-Axis acceleration")
+x_acceleration.set_ylabel("X-Axis acceleration, m/s^2")
 # plt.plot(time_arr_for_plotting, result_x_acceleration, 'ro', linewidth=1)
 plt.plot(time_arr_for_plotting, result_x_acceleration, 'r', linewidth=1)
-plt.plot(v_acc_max)
+plt.plot(time_arr_for_plotting, v_acc_max_vector, 'b-', linewidth=1)
+plt.plot(time_arr_for_plotting, v_acc_max_vector_minus, 'b-', linewidth=1)
 
 # ---------------------------------------------------------------------
 
@@ -553,27 +577,31 @@ fig3.set_dpi(100)
 
 ax3 = plt.axes()
 ax3.set_aspect(1)
-ax3.grid()
 
 y_coord = plt.subplot(311)
+plt.grid()
 y_coord.set_xlabel("Time")
-y_coord.set_ylabel("Coordinate Y")
+y_coord.set_ylabel("Coordinate Y, m")
 # plt.plot(time_arr_for_plotting, result_trajectory_y, 'ro', linewidth=1)
 plt.plot(time_arr_for_plotting, result_trajectory_y, 'r', linewidth=1)
 
 y_velocity = plt.subplot(312)
+plt.grid()
 y_velocity.set_xlabel("Time")
-y_velocity.set_ylabel("Y-Axis speed")
+y_velocity.set_ylabel("Y-Axis speed, m/s")
 # plt.plot(time_arr_for_plotting, result_y_velocity, 'ro', linewidth=1)
 plt.plot(time_arr_for_plotting, result_y_velocity, 'r', linewidth=1)
-plt.plot(v_max)
+plt.plot(time_arr_for_plotting, v_max_vector, 'b-', linewidth=1)
+plt.plot(time_arr_for_plotting, v_max_vector_minus, 'b-', linewidth=1)
 
 y_acceleration = plt.subplot(313)
+plt.grid()
 y_acceleration.set_xlabel("Time")
-y_acceleration.set_ylabel("Y-Axis acceleration")
+y_acceleration.set_ylabel("Y-Axis acceleration, m/s^2")
 # plt.plot(time_arr_for_plotting, result_y_acceleration, 'ro', linewidth=1)
 plt.plot(time_arr_for_plotting, result_y_acceleration, 'r', linewidth=1)
-plt.plot(v_acc_max)
+plt.plot(time_arr_for_plotting, v_acc_max_vector, 'b-', linewidth=1)
+plt.plot(time_arr_for_plotting, v_acc_max_vector_minus, 'b-', linewidth=1)
 
 # -----------------------------------------------------------------------
 
@@ -584,28 +612,37 @@ fig4.set_dpi(100)
 
 ax4 = plt.axes()
 ax4.set_aspect(1)
-ax4.grid()
 
 velocity = plt.subplot(311)
+plt.grid()
 velocity.set_xlabel("Time")
-velocity.set_ylabel("Speed")
-# plt.plot(time_arr_for_plotting, result_trajectory_v, 'r', linewidth=1)
-plt.plot(time_arr_for_plotting, v_max, 'b-', linewidth=1)
+velocity.set_ylabel("Speed, m/s")
+plt.plot(time_arr_for_plotting, result_trajectory_v, 'r', linewidth=1)
+plt.plot(time_arr_for_plotting, v_max_vector, 'b-', linewidth=1)
+plt.plot(time_arr_for_plotting, v_max_vector_minus, 'b-', linewidth=1)
 
 beta_plot = plt.subplot(312)
+plt.grid()
 beta_plot.set_xlabel("Time")
-beta_plot.set_ylabel("Wheel turning angle")
+beta_plot.set_ylabel("Wheel turning angle, rad")
 plt.plot(time_arr_for_plotting, result_trajectory_beta, 'r', linewidth=1)
-plt.plot(beta_max)
+plt.plot(time_arr_for_plotting, beta_max_vector, 'b-', linewidth=1)
+plt.plot(time_arr_for_plotting, beta_max_vector_minus, 'b-', linewidth=1)
 
 angle_speed = plt.subplot(313)
+plt.grid()
 angle_speed.set_xlabel("Time")
-angle_speed.set_ylabel("Angle speed")
+angle_speed.set_ylabel("Angle speed, rad/s")
 plt.plot(time_arr_for_plotting, result_trajectory_angle_speed, 'r', linewidth=1)
-plt.plot((v_max / L) * tan(beta_max))
+plt.plot(time_arr_for_plotting, angle_speed_max_vector, 'b-', linewidth=1)
+plt.plot(time_arr_for_plotting, angle_speed_max_vector_minus, 'b-', linewidth=1)
 
 # ----------------------------------------------------------------------
+# MUST HAVE
 plt.show()
+
+# ----------------------------------------------------------------------
+
 """
 ANIMATION
 """
