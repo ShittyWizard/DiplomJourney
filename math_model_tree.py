@@ -20,8 +20,16 @@ phi = phi_0
 x = x_0
 y = y_0
 
-# Prediction horizon * delta_t = 1.5s
+# Prediction horizon * delta_t = 0.15s
 prediction_horizon = 3
+
+# Vector with no constraints on velocity
+vector_v_no_constraint = np.arange(v, v_max + 0.1, 0.1)
+vector_v_no_constraint = np.round(vector_v_no_constraint, 3)
+
+# Generate vector from minimal possible angle to maximum possible angle
+vector_beta_no_constraint = np.arange(-beta_max, beta_max + math.pi / 96, math.pi / 96)
+vector_beta_no_constraint = np.round(vector_beta_no_constraint, 3)
 
 # Generate vectors with coordinates for plotting
 result_vector_x = [x]
@@ -261,8 +269,10 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _target_x, _target_
             j = 0
             for velocity in _vector_v:
                 if steps_for_slowing > 0:
-                    if np.min(_vector_v) >= v_min:
+                    if np.min(_vector_v) > v_min:
                         velocity = np.min(_vector_v)
+                    else:
+                        velocity = v_min
                 for angle in _vector_beta:
                     temp0 = iteration_of_predict(initial_coordinates, velocity, angle)
                     global_coordinates[j] = temp0
@@ -274,8 +284,10 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _target_x, _target_
             j = size_max_1
             for velocity in _vector_v:
                 if steps_for_slowing > 0:
-                    if np.min(_vector_v) >= v_min:
+                    if np.min(_vector_v) > v_min:
                         velocity = np.min(_vector_v)
+                    else:
+                        velocity = v_min
                 for angle in _vector_beta:
                     temp1 = iteration_of_predict(global_coordinates[(j - size_max_1) % size_max_1],
                                                  velocity, angle)
@@ -288,8 +300,10 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _target_x, _target_
             j = size_max_1 + size_max_2
             for velocity in _vector_v:
                 if steps_for_slowing > 0:
-                    if np.min(_vector_v) >= v_min:
+                    if np.min(_vector_v) > v_min:
                         velocity = np.min(_vector_v)
+                    else:
+                        velocity = v_min
                 for angle in _vector_beta:
                     temp2 = iteration_of_predict(
                         global_coordinates[size_max_1 + ((j - (size_max_1 + size_max_2)) % size_max_1)],
@@ -393,6 +407,7 @@ def math_mpc(initial_coordinates, target_coordinates):
     global result_x_velocity, result_x_acceleration
     global result_y_velocity, result_y_acceleration
     global result_trajectory_v, result_trajectory_beta, result_trajectory_angle_speed
+
     print("Start MPC modelling... ")
     print()
     p = 1
@@ -416,7 +431,9 @@ def math_mpc(initial_coordinates, target_coordinates):
 
     while not is_on_target(x, y, x_t, y_t)[0]:
         vector_velocities = vector_of_velocities(v)
+        # vector_velocities = vector_v_no_constraint
         vector_beta_angles = vector_of_beta_angles(beta)
+        # vector_beta_angles = vector_beta_no_constraint
         previous_v = v
 
         coordinates = predictive_control(x, y, phi, x_t, y_t, vector_velocities, vector_beta_angles)
@@ -518,8 +535,9 @@ ax1 = plt.axes()
 ax1.set_aspect(1)
 plt.xlabel("Coordinate X")
 plt.ylabel("Coordinate Y")
-plt.title(r'$\beta_{max} = $' + str(beta_max) + '  ' + r'$v_{max} = $' + str(v_max) + '  ' + r'$\varphi_0 = $' + str(
-    phi_0) + ' ' + r'$ L = $' + str(L))
+plt.title(r'$\beta_{max} = $' + '60deg' + '  ' + r'$v_{max} = $' + str(
+    v_max) + 'm/s ' + r'$ w_{max} = $' + str(
+    v_acc_max) + 'm/s^2  ' + r'$\varphi_0 = $' + str(math.degrees(phi_0)) + 'deg  ' + r'$ L = $' + str(L) + 'm ')
 xdata, ydata = [], []
 
 # MODELLING!
@@ -537,11 +555,13 @@ for item in time_arr_for_plotting:
     angle_speed_max_vector.append((v_max / L) * tan(beta_max))
     angle_speed_max_vector_minus.append(-(v_max / L) * tan(beta_max))
 
+# Plot polygon-barrier
 add_plot_polygon([[-1, -1], [-1, -1.9], [-2, -2.2], [-3, -2], [-2, -0.5], [-1, -1]])
 
-plt.plot(result_trajectory_x, result_trajectory_y, 'r', linewidth=1)
+plt.plot(result_trajectory_x, result_trajectory_y, 'r', linewidth=2)
 # plt.plot(result_trajectory_x, result_trajectory_y, 'ro', linewidth=1)
-
+# plt.quiver(result_trajectory_x, result_trajectory_y, cos(result_trajectory_phi), sin(result_trajectory_phi),
+#            pivot='middle')
 # -------------------------------------------------------------------
 # Plots for X coordinate
 fig2 = plt.figure(2)

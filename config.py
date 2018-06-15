@@ -24,5 +24,5 @@ y_0 = 0
 phi_0 = math.pi * 5/6
 
 # Target
-x_t = -1
-y_t = -5
+x_t = 1
+y_t = 5
