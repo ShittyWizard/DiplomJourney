@@ -480,7 +480,7 @@ dt = delta_t
 time_arr_for_plotting = [0]
 
 # Stack with coordinates for optimal trajectory
-optimal_trajectory = [0]
+optimal_trajectory = [[[0]]]
 
 result_trajectory_phi = [phi_0]
 
