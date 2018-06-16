@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="0f1f0bcd-73d2-4974-b8a9-e6569acf9973" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/config.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/math_model_tree.py" beforeDir="false" afterPath="$PROJECT_DIR$/math_model_tree.py" afterDir="false" />
-    </list>
+    <list default="true" id="0f1f0bcd-73d2-4974-b8a9-e6569acf9973" name="Default" comment="" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -20,8 +17,8 @@
       <file leaf-file-name="math_model_tree.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/math_model_tree.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="672">
-              <caret line="594" column="75" selection-start-line="594" selection-start-column="75" selection-end-line="594" selection-end-column="75" />
+            <state relative-caret-position="621">
+              <caret line="573" column="10" selection-start-line="573" selection-start-column="10" selection-end-line="573" selection-end-column="10" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
               </folding>
@@ -451,7 +448,6 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="67" y="25" width="1853" height="1055" extended-state="6" />
-    <editor active="true" />
     <layout>
       <window_info anchor="bottom" id="TODO" order="6" weight="0.329718" />
       <window_info anchor="bottom" id="Event Log" order="12" sideWeight="0.5008301" side_tool="true" weight="0.45661604" />
@@ -765,8 +761,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/math_model_tree.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="672">
-          <caret line="594" column="75" selection-start-line="594" selection-start-column="75" selection-end-line="594" selection-end-column="75" />
+        <state relative-caret-position="621">
+          <caret line="573" column="10" selection-start-line="573" selection-start-column="10" selection-end-line="573" selection-end-column="10" />
           <folding>
             <element signature="e#0#11#0" expanded="true" />
           </folding>

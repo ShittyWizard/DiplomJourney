@@ -1,7 +1,7 @@
 import math
 
-eps = 0.01
-eps_beta = 0.1
+eps = 0.001
+eps_beta = math.radians(5)
 # Parameters
 L = 0.5
 
@@ -21,7 +21,7 @@ v_acc_max = 0.5
 # Initial conditions
 x_0 = 0
 y_0 = 0
-phi_0 = math.pi * 5/6
+phi_0 = 0
 
 # Target
 x_t = 1

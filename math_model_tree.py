@@ -1,15 +1,18 @@
+import random
+import sys as sys
 import time
+
+import matplotlib.pyplot as plt
+import numpy as np
+import scipy.integrate as sp
 
 from matplotlib.animation import FuncAnimation
 from matplotlib.patches import Polygon
 from scipy import *
-import matplotlib.pyplot as plt
-import numpy as np
-import scipy.integrate as sp
-import sys as sys
+
+from config import (L, beta_acc_max, beta_max, delta_beta, delta_t, delta_v,
+                    eps, phi_0, v_acc_max, v_max, v_min, x_0, x_t, y_0, y_t, eps_beta)
 from CoordinateTree import CoordinateTree
-from config import phi_0, L, y_t, y_0, x_t, x_0, beta_max, v_max, eps, delta_t, delta_beta, delta_v, v_acc_max, \
-    beta_acc_max, v_min
 
 np.set_printoptions(threshold=np.nan)
 
@@ -215,7 +218,7 @@ def vector_of_velocities(actual_velocity):
     vector_velocities = []
     for i in range(1 + 2 * int((v_acc_max * delta_t) / delta_v)):
         possible_velocity = actual_velocity + delta_v * (i - (v_acc_max * delta_t) / delta_v)
-        if (not possible_velocity < 0) and (not possible_velocity > v_max):
+        if (not possible_velocity < 0):
             vector_velocities.append(possible_velocity)
     return vector_velocities
 
@@ -225,15 +228,25 @@ def vector_of_beta_angles(actual_beta):
     for i in range(1 + 2 * int((math.degrees(beta_acc_max) * delta_t) / math.degrees(delta_beta))):
         possible_angle = actual_beta + delta_beta * (
                 i - (math.degrees(beta_acc_max) * delta_t) / math.degrees(delta_beta))
-        if abs(possible_angle) > beta_max:
-            print(".")
-        else:
+        if abs(possible_angle) <= (beta_max + math.radians(eps_beta)):
             vector_beta_angles.append(possible_angle)
     return vector_beta_angles
 
 
+def get_actual_velocity(velocity_ref):
+    if velocity_ref < 0.4:
+        pertubation_velocity = velocity_ref + (random.randint(0,10) / 1000)
+    else:
+        pertubation_velocity = velocity_ref + (random.randint(-100,10) / 1000)
+    return pertubation_velocity
+
+def get_actual_beta_angle(beta_ref):
+    pertubation_angle = beta_ref + math.radians(random.randint(-5,5))
+    return pertubation_angle
+
+
 def predictive_control(_initial_x, _initial_y, _initial_phi, _target_x, _target_y, _vector_v,
-                       _vector_beta):
+                       _vector_beta, isActual):
     global optimal_trajectory, optimal_criterion
     global result_trajectory_x, result_trajectory_y, result_trajectory_phi
     global t, m, time_arr_for_plotting
@@ -418,6 +431,13 @@ def math_mpc(initial_coordinates, target_coordinates):
     v_0 = coordinates[3]
     v = v_0
     beta = initial_coordinates[4]
+    
+
+    actual_x = initial_coordinates[0]
+    actual_y = initial_coordinates[1]
+    actual_phi = initial_coordinates[2]
+    actual_velocity = v_0
+    actual_beta = initial_coordinates[4]
 
     x_t = target_coordinates[0]
     y_t = target_coordinates[1]
@@ -431,18 +451,27 @@ def math_mpc(initial_coordinates, target_coordinates):
 
     while not is_on_target(x, y, x_t, y_t)[0]:
         vector_velocities = vector_of_velocities(v)
+        vector_actual_velocities = vector_of_velocities(actual_velocity)
         # vector_velocities = vector_v_no_constraint
         vector_beta_angles = vector_of_beta_angles(beta)
+        vector_actual_beta_angles = vector_of_beta_angles(actual_beta)
         # vector_beta_angles = vector_beta_no_constraint
         previous_v = v
 
-        coordinates = predictive_control(x, y, phi, x_t, y_t, vector_velocities, vector_beta_angles)
+        coordinates = predictive_control(x, y, phi, x_t, y_t, vector_velocities, vector_beta_angles, False)
 
         x = coordinates[0]
         y = coordinates[1]
         phi = coordinates[2]
         v = coordinates[3]
         beta = coordinates[4]
+        
+        actual_coordinates = predictive_control(actual_x, actual_y, actual_phi, x_t, y_t, vector_actual_velocities, vector_actual_beta_angles, True)
+        actual_x = actual_coordinates[0]
+        actual_y = actual_coordinates[1]
+        actual_phi = actual_coordinates[2]
+        actual_velocity = get_actual_velocity(actual_coordinates[3])
+        actual_beta = get_actual_beta_angle(actual_coordinates[4])
 
         result_x_velocity.append(v * cos(phi))
         result_x_acceleration.append(((v - previous_v) / delta_t) * cos(phi))
@@ -457,12 +486,12 @@ def math_mpc(initial_coordinates, target_coordinates):
             break
         elif x == x_previous and y == y_previous:
             recursive = True
-        if p == 40:
-            turn_left(x, y, phi, 2, v)
-        if p == 70:
-            turn_right(x, y, phi, 2, v)
-        if p == 90:
-            new_target(x, y, phi, -3, -3, v)
+        # if p == 40:
+        #     turn_left(x, y, phi, 2, v)
+        # if p == 70:
+        #     turn_right(x, y, phi, 2, v)
+        # if p == 90:
+        #     new_target(x, y, phi, -3, -3, v)
         x_previous = x
         y_previous = y
         print("Iteration number = " + str(p))
@@ -540,8 +569,12 @@ plt.title(r'$\beta_{max} = $' + '60deg' + '  ' + r'$v_{max} = $' + str(
     v_acc_max) + 'm/s^2  ' + r'$\varphi_0 = $' + str(math.degrees(phi_0)) + 'deg  ' + r'$ L = $' + str(L) + 'm ')
 xdata, ydata = [], []
 
-# MODELLING!
-math_mpc([0, 0, math.pi * 5 / 6, 0, 0], [-2, -2])
+"""
+MODELLING
+"""
+# ---------------------------------------------------------------
+math_mpc([0, 0, 0, 0, 0], [0.5, 1])
+# ---------------------------------------------------------------
 
 for item in time_arr_for_plotting:
     v_max_vector.append(v_max)
@@ -556,10 +589,10 @@ for item in time_arr_for_plotting:
     angle_speed_max_vector_minus.append(-(v_max / L) * tan(beta_max))
 
 # Plot polygon-barrier
-add_plot_polygon([[-1, -1], [-1, -1.9], [-2, -2.2], [-3, -2], [-2, -0.5], [-1, -1]])
+# add_plot_polygon([[-1, -1], [-1, -1.9], [-2, -2.2], [-3, -2], [-2, -0.5], [-1, -1]])
 
 plt.plot(result_trajectory_x, result_trajectory_y, 'r', linewidth=2)
-# plt.plot(result_trajectory_x, result_trajectory_y, 'ro', linewidth=1)
+plt.plot(result_trajectory_x, result_trajectory_y, 'ro', linewidth=1)
 # plt.quiver(result_trajectory_x, result_trajectory_y, cos(result_trajectory_phi), sin(result_trajectory_phi),
 #            pivot='middle')
 # -------------------------------------------------------------------
