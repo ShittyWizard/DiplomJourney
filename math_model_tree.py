@@ -31,7 +31,8 @@ vector_v_no_constraint = np.arange(v, v_max + 0.1, 0.1)
 vector_v_no_constraint = np.round(vector_v_no_constraint, 3)
 
 # Generate vector from minimal possible angle to maximum possible angle
-vector_beta_no_constraint = np.arange(-beta_max, beta_max + math.pi / 96, math.pi / 96)
+vector_beta_no_constraint = np.arange(-beta_max,
+                                      beta_max + math.pi / 96, math.pi / 96)
 vector_beta_no_constraint = np.round(vector_beta_no_constraint, 3)
 
 # Generate vectors with coordinates for plotting
@@ -79,8 +80,10 @@ def v_phi(time, _velocity, angle_beta):
 
 # Criterion for optimizing movement
 def control_criterion(predicted_coordinates):
-    distance_from_target = get_distance_from_target(predicted_coordinates[0], predicted_coordinates[1])
-    distance_from_line = get_distance_from_line(predicted_coordinates[0], predicted_coordinates[1])
+    distance_from_target = get_distance_from_target(
+        predicted_coordinates[0], predicted_coordinates[1])
+    distance_from_line = get_distance_from_line(
+        predicted_coordinates[0], predicted_coordinates[1])
     return 10000 * distance_from_target + 10000 * distance_from_line
 
 
@@ -120,17 +123,20 @@ def new_target(actual_x, actual_y, actual_phi, target_x, target_y, actual_veloci
     x_0 = actual_x
     y_0 = actual_y
     phi_0 = actual_phi
-    plot_from_actual_to_target(actual_x, actual_y, actual_phi, target_x, target_y)
+    plot_from_actual_to_target(
+        actual_x, actual_y, actual_phi, target_x, target_y)
     slow_down(math.radians(30))
     print("New target: " + str(x_t) + " " + str(y_t))
 
 
 def plot_from_actual_to_target(initial_x, initial_y, initial_phi, target_x, target_y):
     # Line from initial point to 1st target
-    plt.plot([initial_x, target_x], [initial_y, target_y], 'b', linewidth=2, alpha=0.5)
+    plt.plot([initial_x, target_x], [initial_y, target_y],
+             'b', linewidth=2, alpha=0.5)
     plt.plot([initial_x, target_x], [initial_y, target_y], 'bo')
     # Initial position
-    plt.quiver(initial_x, initial_y, cos(initial_phi), sin(initial_phi), pivot='middle')
+    plt.quiver(initial_x, initial_y, cos(initial_phi),
+               sin(initial_phi), pivot='middle')
 
 
 def turn_left(actual_x, actual_y, actual_phi, distance, actual_velocity):
@@ -139,25 +145,34 @@ def turn_left(actual_x, actual_y, actual_phi, distance, actual_velocity):
         if actual_phi <= math.pi:
             # \ |
             temp_phi = actual_phi - math.pi / 2
-            target_x = actual_x - distance * cos(temp_phi) - radius_u_turn * sin(temp_phi)
-            target_y = actual_y - distance * sin(temp_phi) + radius_u_turn * cos(temp_phi)
+            target_x = actual_x - distance * \
+                cos(temp_phi) - radius_u_turn * sin(temp_phi)
+            target_y = actual_y - distance * \
+                sin(temp_phi) + radius_u_turn * cos(temp_phi)
         else:
             # / |
             temp_phi = actual_phi - math.pi
-            target_x = actual_x + distance * sin(temp_phi) - radius_u_turn * cos(temp_phi)
-            target_y = actual_y - distance * cos(temp_phi) - radius_u_turn * sin(temp_phi)
+            target_x = actual_x + distance * \
+                sin(temp_phi) - radius_u_turn * cos(temp_phi)
+            target_y = actual_y - distance * \
+                cos(temp_phi) - radius_u_turn * sin(temp_phi)
     else:
         if actual_phi <= 2 * math.pi:
             # | \
             temp_phi = actual_phi - 3 * math.pi / 2
-            target_x = actual_x + distance * cos(temp_phi) + radius_u_turn * sin(temp_phi)
-            target_y = actual_y + distance * sin(temp_phi) - radius_u_turn * cos(temp_phi)
+            target_x = actual_x + distance * \
+                cos(temp_phi) + radius_u_turn * sin(temp_phi)
+            target_y = actual_y + distance * \
+                sin(temp_phi) - radius_u_turn * cos(temp_phi)
         else:
             # | /
             temp_phi = actual_phi
-            target_x = actual_x - distance * sin(temp_phi) + radius_u_turn * cos(temp_phi)
-            target_y = actual_y + distance * cos(temp_phi) + radius_u_turn * sin(temp_phi)
-    new_target(actual_x, actual_y, actual_phi, target_x, target_y, actual_velocity)
+            target_x = actual_x - distance * \
+                sin(temp_phi) + radius_u_turn * cos(temp_phi)
+            target_y = actual_y + distance * \
+                cos(temp_phi) + radius_u_turn * sin(temp_phi)
+    new_target(actual_x, actual_y, actual_phi,
+               target_x, target_y, actual_velocity)
     slow_down(math.radians(90))
     print("Turning left...")
     print()
@@ -169,25 +184,34 @@ def turn_right(actual_x, actual_y, actual_phi, distance, actual_velocity):
         if actual_phi <= math.pi:
             # \ |
             temp_phi = actual_phi - math.pi / 2
-            target_x = actual_x + distance * cos(temp_phi) - radius_u_turn * sin(temp_phi)
-            target_y = actual_y + distance * sin(temp_phi) + radius_u_turn * cos(temp_phi)
+            target_x = actual_x + distance * \
+                cos(temp_phi) - radius_u_turn * sin(temp_phi)
+            target_y = actual_y + distance * \
+                sin(temp_phi) + radius_u_turn * cos(temp_phi)
         else:
             # / |
             temp_phi = actual_phi - math.pi
-            target_x = actual_x - distance * sin(temp_phi) - radius_u_turn * cos(temp_phi)
-            target_y = actual_y + distance * cos(temp_phi) - radius_u_turn * sin(temp_phi)
+            target_x = actual_x - distance * \
+                sin(temp_phi) - radius_u_turn * cos(temp_phi)
+            target_y = actual_y + distance * \
+                cos(temp_phi) - radius_u_turn * sin(temp_phi)
     else:
         if actual_phi <= 2 * math.pi:
             # | \
             temp_phi = actual_phi - 3 * math.pi / 2
-            target_x = actual_x - distance * cos(temp_phi) + radius_u_turn * sin(temp_phi)
-            target_y = actual_y - distance * sin(temp_phi) - radius_u_turn * cos(temp_phi)
+            target_x = actual_x - distance * \
+                cos(temp_phi) + radius_u_turn * sin(temp_phi)
+            target_y = actual_y - distance * \
+                sin(temp_phi) - radius_u_turn * cos(temp_phi)
         else:
             # | /
             temp_phi = actual_phi
-            target_x = actual_x + distance * sin(temp_phi) + radius_u_turn * cos(temp_phi)
-            target_y = actual_y - distance * cos(temp_phi) + radius_u_turn * sin(temp_phi)
-    new_target(actual_x, actual_y, actual_phi, target_x, target_y, actual_velocity)
+            target_x = actual_x + distance * \
+                sin(temp_phi) + radius_u_turn * cos(temp_phi)
+            target_y = actual_y - distance * \
+                cos(temp_phi) + radius_u_turn * sin(temp_phi)
+    new_target(actual_x, actual_y, actual_phi,
+               target_x, target_y, actual_velocity)
     slow_down(math.radians(90))
     print("Turning right...")
     print()
@@ -217,8 +241,9 @@ def find_closest_value(target_value, vector_of_values):
 def vector_of_velocities(actual_velocity):
     vector_velocities = []
     for i in range(1 + 2 * int((v_acc_max * delta_t) / delta_v)):
-        possible_velocity = actual_velocity + delta_v * (i - (v_acc_max * delta_t) / delta_v)
-        if (not possible_velocity < 0):
+        possible_velocity = actual_velocity + delta_v * \
+            (i - (v_acc_max * delta_t) / delta_v)
+        if (not possible_velocity < 0) and possible_velocity < v_max:
             vector_velocities.append(possible_velocity)
     return vector_velocities
 
@@ -227,21 +252,25 @@ def vector_of_beta_angles(actual_beta):
     vector_beta_angles = []
     for i in range(1 + 2 * int((math.degrees(beta_acc_max) * delta_t) / math.degrees(delta_beta))):
         possible_angle = actual_beta + delta_beta * (
-                i - (math.degrees(beta_acc_max) * delta_t) / math.degrees(delta_beta))
+            i - (math.degrees(beta_acc_max) * delta_t) / math.degrees(delta_beta))
         if abs(possible_angle) <= (beta_max + math.radians(eps_beta)):
             vector_beta_angles.append(possible_angle)
     return vector_beta_angles
 
 
 def get_actual_velocity(velocity_ref):
-    if velocity_ref < 0.4:
-        pertubation_velocity = velocity_ref + (random.randint(0,10) / 1000)
+    if random.random() < 0.3:
+        if velocity_ref < 0.4:
+            pertubation_velocity = velocity_ref + (random.randint(0, 10) / 1000)
+        else:
+            pertubation_velocity = velocity_ref + (random.randint(-100, 10) / 1000)
     else:
-        pertubation_velocity = velocity_ref + (random.randint(-100,10) / 1000)
+        pertubation_velocity = velocity_ref
     return pertubation_velocity
 
+
 def get_actual_beta_angle(beta_ref):
-    pertubation_angle = beta_ref + math.radians(random.randint(-5,5))
+    pertubation_angle = beta_ref + math.radians(random.randint(-10, 10))
     return pertubation_angle
 
 
@@ -249,10 +278,12 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _target_x, _target_
                        _vector_beta, isActual):
     global optimal_trajectory, optimal_criterion
     global result_trajectory_x, result_trajectory_y, result_trajectory_phi
-    global t, m, time_arr_for_plotting
+    global actual_result_trajectory_x, actual_result_trajectory_y, actual_result_trajectory_phi
+    global t, m, time_arr_for_plotting, actual_time_arr_for_plotting
     global result_v, result_beta
     global recursive, need_scatter
     global result_trajectory_v, result_trajectory_beta, result_trajectory_angle_speed
+    global actual_result_trajectory_v, actual_result_trajectory_beta, actual_result_trajectory_angle_speed
     global steps_for_slowing
 
     size_max_1 = size(_vector_beta) * size(_vector_v)
@@ -265,17 +296,13 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _target_x, _target_
     result_x = 0
     result_y = 0
     result_phi = 0
-    field_x_1 = []
-    field_y_1 = []
 
-    field_x_2 = []
-    field_y_2 = []
-
-    field_x_3 = []
-    field_y_3 = []
-
-    t += delta_t
-    time_arr_for_plotting.append(t)
+    if not isActual:
+        t += delta_t
+        time_arr_for_plotting.append(t)
+    else:
+        t += delta_t
+        actual_time_arr_for_plotting.append(t)
     start = time.time()
     for i in range(prediction_horizon):
         if i == 0:
@@ -287,10 +314,9 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _target_x, _target_
                     else:
                         velocity = v_min
                 for angle in _vector_beta:
-                    temp0 = iteration_of_predict(initial_coordinates, velocity, angle)
+                    temp0 = iteration_of_predict(
+                        initial_coordinates, velocity, angle)
                     global_coordinates[j] = temp0
-                    field_x_1.append(temp0[0])
-                    field_y_1.append(temp0[1])
                     j += 1
             print("First layer done. Time = " + str(time.time() - start))
         elif i == 1:
@@ -305,8 +331,6 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _target_x, _target_
                     temp1 = iteration_of_predict(global_coordinates[(j - size_max_1) % size_max_1],
                                                  velocity, angle)
                     global_coordinates[j] = temp1
-                    field_x_2.append(temp1[0])
-                    field_y_2.append(temp1[1])
                     j += 1
             print("Second layer done.Time = " + str(time.time() - start))
         elif i == 2:
@@ -319,15 +343,15 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _target_x, _target_
                         velocity = v_min
                 for angle in _vector_beta:
                     temp2 = iteration_of_predict(
-                        global_coordinates[size_max_1 + ((j - (size_max_1 + size_max_2)) % size_max_1)],
+                        global_coordinates[size_max_1 +
+                                           ((j - (size_max_1 + size_max_2)) % size_max_1)],
                         velocity, angle)
                     global_coordinates[j] = temp2
-                    field_x_3.append(temp2[0])
-                    field_y_3.append(temp2[1])
                     if control_criterion(temp2) < optimal_criterion:
                         optimal_trajectory.pop()
                         optimal_trajectory.append([global_coordinates[global_coordinates.get_index_of_parent(j)[1]],
-                                                   global_coordinates[global_coordinates.get_index_of_parent(j)[0]],
+                                                   global_coordinates[global_coordinates.get_index_of_parent(j)[
+                                                       0]],
                                                    global_coordinates[j]])
                         result_v = velocity
                         result_beta = angle
@@ -338,65 +362,137 @@ def predictive_control(_initial_x, _initial_y, _initial_phi, _target_x, _target_
             print("Absolute time = " + str(t))
             print()
 
-            predicted_trajectory_x = [optimal_trajectory[0][0][0], optimal_trajectory[0][1][0],
-                                      optimal_trajectory[0][2][0]]
-            predicted_trajectory_x_anim0.append(predicted_trajectory_x[0])
-            predicted_trajectory_x_anim1.append(predicted_trajectory_x[1])
-            predicted_trajectory_x_anim2.append(predicted_trajectory_x[2])
+            if not isActual:
+                predicted_trajectory_x = [optimal_trajectory[0][0][0], optimal_trajectory[0][1][0],
+                                          optimal_trajectory[0][2][0]]
+                predicted_trajectory_x_anim0.append(predicted_trajectory_x[0])
+                predicted_trajectory_x_anim1.append(predicted_trajectory_x[1])
+                predicted_trajectory_x_anim2.append(predicted_trajectory_x[2])
 
-            predicted_trajectory_y = [optimal_trajectory[0][0][1], optimal_trajectory[0][1][1],
-                                      optimal_trajectory[0][2][1]]
-            predicted_trajectory_y_anim0.append(predicted_trajectory_y[0])
-            predicted_trajectory_y_anim1.append(predicted_trajectory_y[1])
-            predicted_trajectory_y_anim2.append(predicted_trajectory_y[2])
+                predicted_trajectory_y = [optimal_trajectory[0][0][1], optimal_trajectory[0][1][1],
+                                          optimal_trajectory[0][2][1]]
+                predicted_trajectory_y_anim0.append(predicted_trajectory_y[0])
+                predicted_trajectory_y_anim1.append(predicted_trajectory_y[1])
+                predicted_trajectory_y_anim2.append(predicted_trajectory_y[2])
 
-            predicted_trajectory_phi = [optimal_trajectory[0][0][2], optimal_trajectory[0][1][2],
-                                        optimal_trajectory[0][2][2]]
-            predicted_trajectory_phi_anim0.append(predicted_trajectory_phi[0])
-            predicted_trajectory_phi_anim1.append(predicted_trajectory_phi[1])
-            predicted_trajectory_phi_anim2.append(predicted_trajectory_phi[2])
+                predicted_trajectory_phi = [optimal_trajectory[0][0][2], optimal_trajectory[0][1][2],
+                                            optimal_trajectory[0][2][2]]
+                predicted_trajectory_phi_anim0.append(
+                    predicted_trajectory_phi[0])
+                predicted_trajectory_phi_anim1.append(
+                    predicted_trajectory_phi[1])
+                predicted_trajectory_phi_anim2.append(
+                    predicted_trajectory_phi[2])
 
-            result_x = predicted_trajectory_x[0]
-            result_y = predicted_trajectory_y[0]
-            result_phi = predicted_trajectory_phi[0]
-
-            if m == 2:
-                print("Predicted trajectory is in target! x4")
-                result_x = predicted_trajectory_x[2]
-                result_y = predicted_trajectory_y[2]
-                result_phi = predicted_trajectory_phi[2]
-                print("Distance from target: " + str(
-                    is_on_target(predicted_trajectory_x[1], predicted_trajectory_y[1], x_t, y_t)[1]))
-            elif m == 1:
-                print("Predicted trajectory is in target! x3")
-                result_x = predicted_trajectory_x[1]
-                result_y = predicted_trajectory_y[1]
-                result_phi = predicted_trajectory_phi[1]
-                print("Distance from target: " + str(
-                    is_on_target(predicted_trajectory_x[1], predicted_trajectory_y[1], x_t, y_t)[1]))
-                m += 1
-            elif is_on_target(predicted_trajectory_x[2], predicted_trajectory_y[2], x_t, y_t)[0]:
-                print("Predicted trajectory is in target! x2")
                 result_x = predicted_trajectory_x[0]
                 result_y = predicted_trajectory_y[0]
                 result_phi = predicted_trajectory_phi[0]
-                print("Distance from target: " + str(
-                    is_on_target(predicted_trajectory_x[1], predicted_trajectory_y[1], x_t, y_t)[1]))
-                m += 1
 
-            result_trajectory_x.append(result_x)
-            result_trajectory_y.append(result_y)
-            result_trajectory_phi.append(result_phi)
-            result_trajectory_v.append(result_v)
-            result_trajectory_beta.append(result_beta)
-            result_trajectory_angle_speed.append((result_v / L) * tan(result_beta))
+                if m == 2:
+                    print("Predicted trajectory is in target! x4")
+                    result_x = predicted_trajectory_x[2]
+                    result_y = predicted_trajectory_y[2]
+                    result_phi = predicted_trajectory_phi[2]
+                    print("Distance from target: " + str(
+                        is_on_target(predicted_trajectory_x[1], predicted_trajectory_y[1], x_t, y_t)[1]))
+                elif m == 1:
+                    print("Predicted trajectory is in target! x3")
+                    result_x = predicted_trajectory_x[1]
+                    result_y = predicted_trajectory_y[1]
+                    result_phi = predicted_trajectory_phi[1]
+                    print("Distance from target: " + str(
+                        is_on_target(predicted_trajectory_x[1], predicted_trajectory_y[1], x_t, y_t)[1]))
+                    m += 1
+                elif is_on_target(predicted_trajectory_x[2], predicted_trajectory_y[2], x_t, y_t)[0]:
+                    print("Predicted trajectory is in target! x2")
+                    result_x = predicted_trajectory_x[0]
+                    result_y = predicted_trajectory_y[0]
+                    result_phi = predicted_trajectory_phi[0]
+                    print("Distance from target: " + str(
+                        is_on_target(predicted_trajectory_x[1], predicted_trajectory_y[1], x_t, y_t)[1]))
+                    m += 1
 
-            print()
-            print("Now I'm here - x : " + str(result_x) + ' y: ' + str(result_y) + ' v: ' + str(
-                result_v) + ' beta: ' + str(math.degrees(result_beta)))
-            print()
-    optimal_criterion = sys.maxsize
-    return [result_x, result_y, result_phi, result_v, result_beta]
+                result_trajectory_x.append(result_x)
+                result_trajectory_y.append(result_y)
+                result_trajectory_phi.append(result_phi)
+                result_trajectory_v.append(result_v)
+                result_trajectory_beta.append(result_beta)
+                result_trajectory_angle_speed.append(
+                    (result_v / L) * tan(result_beta))
+
+                print()
+                print("Now I'm here - x : " + str(result_x) + ' y: ' + str(result_y) + ' v: ' + str(
+                    result_v) + ' beta: ' + str(math.degrees(result_beta)))
+                print()
+                optimal_criterion = sys.maxsize
+                return [result_x, result_y, result_phi, result_v, result_beta]
+            else:
+                actual_predicted_trajectory_x = [optimal_trajectory[0][0][0], optimal_trajectory[0][1][0],
+                                                 optimal_trajectory[0][2][0]]
+                actual_predicted_trajectory_x_anim0.append(
+                    actual_predicted_trajectory_x[0])
+                actual_predicted_trajectory_x_anim1.append(
+                    actual_predicted_trajectory_x[1])
+                actual_predicted_trajectory_x_anim2.append(
+                    actual_predicted_trajectory_x[2])
+
+                actual_predicted_trajectory_y = [optimal_trajectory[0][0][1], optimal_trajectory[0][1][1],
+                                                 optimal_trajectory[0][2][1]]
+                actual_predicted_trajectory_y_anim0.append(
+                    actual_predicted_trajectory_y[0])
+                actual_predicted_trajectory_y_anim1.append(
+                    actual_predicted_trajectory_y[1])
+                actual_predicted_trajectory_y_anim2.append(
+                    actual_predicted_trajectory_y[2])
+
+                actual_predicted_trajectory_phi = [optimal_trajectory[0][0][2], optimal_trajectory[0][1][2],
+                                                   optimal_trajectory[0][2][2]]
+                actual_predicted_trajectory_phi_anim0.append(
+                    actual_predicted_trajectory_phi[0])
+                actual_predicted_trajectory_phi_anim1.append(
+                    actual_predicted_trajectory_phi[1])
+                actual_predicted_trajectory_phi_anim2.append(
+                    actual_predicted_trajectory_phi[2])
+
+                actual_result_x = actual_predicted_trajectory_x[0]
+                actual_result_y = actual_predicted_trajectory_y[0]
+                actual_result_phi = actual_predicted_trajectory_phi[0]
+                actual_result_v = result_v
+                actual_result_beta = result_beta
+                if m == 2:
+                    print("Predicted trajectory is in target! x4")
+                    actual_result_x = actual_predicted_trajectory_x[2]
+                    actual_result_y = actual_predicted_trajectory_y[2]
+                    actual_result_phi = actual_predicted_trajectory_phi[2]
+                    print("Distance from target: " + str(
+                        is_on_target(actual_predicted_trajectory_x[1], actual_predicted_trajectory_y[1], x_t, y_t)[1]))
+                elif m == 1:
+                    print("Predicted trajectory is in target! x3")
+                    actual_result_x = actual_predicted_trajectory_x[1]
+                    actual_result_y = actual_predicted_trajectory_y[1]
+                    actual_result_phi = actual_predicted_trajectory_phi[1]
+                    print("Distance from target: " + str(
+                        is_on_target(actual_predicted_trajectory_x[1], actual_predicted_trajectory_y[1], x_t, y_t)[1]))
+                    m += 1
+                elif is_on_target(actual_predicted_trajectory_x[2], actual_predicted_trajectory_y[2], x_t, y_t)[0]:
+                    print("Predicted trajectory is in target! x2")
+                    actual_result_x = actual_predicted_trajectory_x[0]
+                    actual_result_y = actual_predicted_trajectory_y[0]
+                    actual_result_phi = actual_predicted_trajectory_phi[0]
+                    print("Distance from target: " + str(
+                        is_on_target(actual_predicted_trajectory_x[1], actual_predicted_trajectory_y[1], x_t, y_t)[1]))
+                    m += 1
+
+                actual_result_trajectory_x.append(actual_result_x)
+                actual_result_trajectory_y.append(actual_result_y)
+                actual_result_trajectory_phi.append(actual_result_phi)
+
+                print()
+                print("Now I'm here - x : " + str(actual_result_x) + ' y: ' + str(actual_result_y) + ' v: ' + str(
+                    actual_result_v) + ' beta: ' + str(math.degrees(actual_result_beta)))
+                print()
+                optimal_criterion = sys.maxsize
+                return [actual_result_x, actual_result_y, actual_result_phi, actual_result_v, actual_result_beta]
 
 
 def add_plot_polygon(coordinates_of_vertexes):
@@ -415,8 +511,8 @@ def add_plot_polygon(coordinates_of_vertexes):
 need_scatter = False
 
 
-def math_mpc(initial_coordinates, target_coordinates):
-    global x, y, phi, x_t, y_t, v, beta, recursive, need_scatter, p, time_arr_for_plotting
+def math_mpc(initial_coordinates, target_coordinates, isActual):
+    global x, y, phi, x_t, y_t, v, beta, recursive, need_scatter, p, time_arr_for_plotting, t
     global result_x_velocity, result_x_acceleration
     global result_y_velocity, result_y_acceleration
     global result_trajectory_v, result_trajectory_beta, result_trajectory_angle_speed
@@ -424,106 +520,138 @@ def math_mpc(initial_coordinates, target_coordinates):
     print("Start MPC modelling... ")
     print()
     p = 1
-    coordinates = initial_coordinates
-    x = coordinates[0]
-    y = coordinates[1]
-    phi = coordinates[2]
-    v_0 = coordinates[3]
-    v = v_0
-    beta = initial_coordinates[4]
-    
-
-    actual_x = initial_coordinates[0]
-    actual_y = initial_coordinates[1]
-    actual_phi = initial_coordinates[2]
-    actual_velocity = v_0
-    actual_beta = initial_coordinates[4]
-
+    t = 0
     x_t = target_coordinates[0]
     y_t = target_coordinates[1]
-
-    x_previous = coordinates[0]
-    y_previous = coordinates[1]
 
     recursive = False
 
     plot_from_actual_to_target(x_0, y_0, phi_0, x_t, y_t)
 
-    while not is_on_target(x, y, x_t, y_t)[0]:
-        vector_velocities = vector_of_velocities(v)
-        vector_actual_velocities = vector_of_velocities(actual_velocity)
-        # vector_velocities = vector_v_no_constraint
-        vector_beta_angles = vector_of_beta_angles(beta)
-        vector_actual_beta_angles = vector_of_beta_angles(actual_beta)
-        # vector_beta_angles = vector_beta_no_constraint
-        previous_v = v
-
-        coordinates = predictive_control(x, y, phi, x_t, y_t, vector_velocities, vector_beta_angles, False)
-
+    if not isActual:
+        coordinates = initial_coordinates
         x = coordinates[0]
         y = coordinates[1]
         phi = coordinates[2]
-        v = coordinates[3]
-        beta = coordinates[4]
-        
-        actual_coordinates = predictive_control(actual_x, actual_y, actual_phi, x_t, y_t, vector_actual_velocities, vector_actual_beta_angles, True)
-        actual_x = actual_coordinates[0]
-        actual_y = actual_coordinates[1]
-        actual_phi = actual_coordinates[2]
-        actual_velocity = get_actual_velocity(actual_coordinates[3])
-        actual_beta = get_actual_beta_angle(actual_coordinates[4])
+        v_0 = coordinates[3]
+        v = v_0
+        beta = initial_coordinates[4]
+        x_previous = coordinates[0]
+        y_previous = coordinates[1]
+        while not is_on_target(x, y, x_t, y_t)[0]:
+            vector_velocities = vector_of_velocities(v)
+            # vector_velocities = vector_v_no_constraint
+            vector_beta_angles = vector_of_beta_angles(beta)
 
-        result_x_velocity.append(v * cos(phi))
-        result_x_acceleration.append(((v - previous_v) / delta_t) * cos(phi))
+            # vector_beta_angles = vector_beta_no_constraint
+            previous_v = v
 
-        result_y_velocity.append(v * sin(phi))
-        result_y_acceleration.append(((v - previous_v) / delta_t) * sin(phi))
+            coordinates = predictive_control(
+                x, y, phi, x_t, y_t, vector_velocities, vector_beta_angles, isActual)
 
-        need_scatter = False
+            x = coordinates[0]
+            y = coordinates[1]
+            phi = coordinates[2]
+            v = coordinates[3]
+            beta = coordinates[4]
 
-        if recursive:
-            print("Recursive error.")
-            break
-        elif x == x_previous and y == y_previous:
-            recursive = True
-        # if p == 40:
-        #     turn_left(x, y, phi, 2, v)
-        # if p == 70:
-        #     turn_right(x, y, phi, 2, v)
-        # if p == 90:
-        #     new_target(x, y, phi, -3, -3, v)
-        x_previous = x
-        y_previous = y
-        print("Iteration number = " + str(p))
-        print()
-        p += 1
+            if recursive:
+                print("Recursive error.")
+                break
+            elif x == x_previous and y == y_previous:
+                recursive = True
+            x_previous = x
+            y_previous = y
+            print("Iteration number = " + str(p))
+            print()
+            p += 1
+            result_x_velocity.append(v * cos(phi))
+            result_x_acceleration.append(((v - previous_v) / delta_t) * cos(phi))
+
+            result_y_velocity.append(v * sin(phi))
+            result_y_acceleration.append(((v - previous_v) / delta_t) * sin(phi))
+    else:
+        actual_x = initial_coordinates[0]
+        actual_y = initial_coordinates[1]
+        actual_phi = initial_coordinates[2]
+        v_0 = initial_coordinates[3]
+        actual_velocity = v_0
+        actual_beta = initial_coordinates[4]
+        x_previous = initial_coordinates[0]
+        y_previous = initial_coordinates[1]
+        while not is_on_target(actual_x, actual_y, x_t, y_t)[0]:
+            vector_actual_velocities = vector_of_velocities(actual_velocity)
+            vector_actual_beta_angles = vector_of_beta_angles(actual_beta)
+
+            previous_v = actual_velocity
+            actual_coordinates = predictive_control(
+                actual_x, actual_y, actual_phi, x_t, y_t, vector_actual_velocities, vector_actual_beta_angles, isActual)
+
+            actual_x = actual_coordinates[0]
+            actual_y = actual_coordinates[1]
+            actual_phi = actual_coordinates[2]
+            actual_velocity = get_actual_velocity(actual_coordinates[3])
+            actual_beta = get_actual_beta_angle(actual_coordinates[4])
+
+            actual_result_trajectory_v.append(actual_velocity)
+            actual_result_trajectory_beta.append(actual_beta)
+            actual_result_trajectory_angle_speed.append(
+                (actual_velocity / L) * tan(actual_beta))
+            if recursive:
+                print("Recursive error.")
+                break
+            elif x == x_previous and y == y_previous:
+                recursive = True
+            x_previous = actual_x
+            y_previous = actual_y
+            print("Iteration number = " + str(p))
+            print()
+            p += 1
+
 
     print("MPC modelling has finished. Waiting for plots...")
     print()
-
+    t = 0
     print("Plots are ready.")
 
 
 t = 0
 dt = delta_t
 time_arr_for_plotting = [0]
+actual_time_arr_for_plotting = [0]
 
 # Stack with coordinates for optimal trajectory
 optimal_trajectory = [[[0]]]
 
 result_trajectory_phi = [phi_0]
+actual_result_trajectory_phi = [phi_0]
 
 result_trajectory_x = [x_0]
+actual_result_trajectory_x = [x_0]
+
 result_x_velocity = [0]
+actual_result_x_velocity = [0]
+
 result_x_acceleration = [0]
+actual_result_x_acceleration = [0]
 
 result_trajectory_y = [y_0]
+actual_result_trajectory_y = [y_0]
+
 result_y_velocity = [0]
+actual_result_y_velocity = [0]
+
 result_y_acceleration = [0]
+actual_result_y_acceleration = [0]
 
 result_trajectory_v = [0]
+actual_result_trajectory_v = [0]
+
 result_trajectory_beta = [0]
+actual_result_trajectory_beta = [0]
+
 result_trajectory_angle_speed = [0]
+actual_result_trajectory_angle_speed = [0]
 
 optimal_criterion = control_criterion([x_0, y_0, phi_0])
 result_v = 0
@@ -544,6 +672,18 @@ predicted_trajectory_x_anim2 = []
 predicted_trajectory_y_anim2 = []
 predicted_trajectory_phi_anim2 = []
 
+actual_predicted_trajectory_x_anim0 = []
+actual_predicted_trajectory_y_anim0 = []
+actual_predicted_trajectory_phi_anim0 = []
+
+actual_predicted_trajectory_x_anim1 = []
+actual_predicted_trajectory_y_anim1 = []
+actual_predicted_trajectory_phi_anim1 = []
+
+actual_predicted_trajectory_x_anim2 = []
+actual_predicted_trajectory_y_anim2 = []
+actual_predicted_trajectory_phi_anim2 = []
+
 v_max_vector = []
 v_max_vector_minus = []
 
@@ -562,37 +702,51 @@ fig1.set_dpi(100)
 plt.grid()
 ax1 = plt.axes()
 ax1.set_aspect(1)
-plt.xlabel("Coordinate X")
-plt.ylabel("Coordinate Y")
+plt.xlabel("Coordinate X", fontsize="large")
+plt.ylabel("Coordinate Y", fontsize="large")
 plt.title(r'$\beta_{max} = $' + '60deg' + '  ' + r'$v_{max} = $' + str(
     v_max) + 'm/s ' + r'$ w_{max} = $' + str(
-    v_acc_max) + 'm/s^2  ' + r'$\varphi_0 = $' + str(math.degrees(phi_0)) + 'deg  ' + r'$ L = $' + str(L) + 'm ')
+    v_acc_max) + 'm/s^2  ' + r'$\varphi_0 = $' + str(math.degrees(phi_0)) + 'deg  ' + r'$ L = $' + str(L) + 'm ', fontsize="large")
 xdata, ydata = [], []
 
 """
 MODELLING
 """
 # ---------------------------------------------------------------
-math_mpc([0, 0, 0, 0, 0], [0.5, 1])
+math_mpc([0, 0, 0, 0, 0], [0.5, 1], False)
+m = 0
+math_mpc([0, 0, 0, 0, 0], [0.5, 1], True)
 # ---------------------------------------------------------------
 
 for item in time_arr_for_plotting:
-    v_max_vector.append(v_max)
+    # v_max_vector.append(v_max)
 
     v_acc_max_vector.append(v_acc_max)
     v_acc_max_vector_minus.append(-v_acc_max)
 
-    beta_max_vector.append(beta_max)
-    beta_max_vector_minus.append(-beta_max)
+    # beta_max_vector.append(beta_max)
+    # beta_max_vector_minus.append(-beta_max)
 
     angle_speed_max_vector.append((v_max / L) * tan(beta_max))
     angle_speed_max_vector_minus.append(-(v_max / L) * tan(beta_max))
 
+for item in actual_time_arr_for_plotting:
+    v_max_vector.append(v_max)
+    beta_max_vector.append(beta_max)
+    beta_max_vector_minus.append(-beta_max)
+
+
 # Plot polygon-barrier
 # add_plot_polygon([[-1, -1], [-1, -1.9], [-2, -2.2], [-3, -2], [-2, -0.5], [-1, -1]])
 
-plt.plot(result_trajectory_x, result_trajectory_y, 'r', linewidth=2)
-plt.plot(result_trajectory_x, result_trajectory_y, 'ro', linewidth=1)
+plt.plot(result_trajectory_x, result_trajectory_y, 'r', linewidth=1)
+# plt.plot(result_trajectory_x, result_trajectory_y, 'ro', linewidth=1)
+
+plt.plot(actual_result_trajectory_x,
+         actual_result_trajectory_y, 'g-.', linewidth=1)
+# plt.plot(actual_result_trajectory_x,
+        #  actual_result_trajectory_y, 'go', linewidth=1)
+# plt.plot(actual_result_trajectory_x, actual_result_trajectory_y, 'ro', linewidth=1)
 # plt.quiver(result_trajectory_x, result_trajectory_y, cos(result_trajectory_phi), sin(result_trajectory_phi),
 #            pivot='middle')
 # -------------------------------------------------------------------
@@ -616,7 +770,7 @@ x_velocity.set_xlabel("Time")
 x_velocity.set_ylabel("X-Axis speed, m/s")
 # plt.plot(time_arr_for_plotting, result_x_velocity, 'ro', linewidth=1)
 plt.plot(time_arr_for_plotting, result_x_velocity, 'r', linewidth=2)
-plt.plot(time_arr_for_plotting, v_max_vector, 'b--', linewidth=2)
+plt.plot(actual_time_arr_for_plotting, v_max_vector, 'b--', linewidth=2)
 
 x_acceleration = plt.subplot(313)
 plt.grid()
@@ -649,7 +803,7 @@ y_velocity.set_xlabel("Time")
 y_velocity.set_ylabel("Y-Axis speed, m/s")
 # plt.plot(time_arr_for_plotting, result_y_velocity, 'ro', linewidth=1)
 plt.plot(time_arr_for_plotting, result_y_velocity, 'r', linewidth=2)
-plt.plot(time_arr_for_plotting, v_max_vector, 'b--', linewidth=2)
+plt.plot(actual_time_arr_for_plotting, v_max_vector, 'b--', linewidth=2)
 
 y_acceleration = plt.subplot(313)
 plt.grid()
@@ -670,28 +824,30 @@ fig4.set_dpi(100)
 ax4 = plt.axes()
 ax4.set_aspect(1)
 
-velocity = plt.subplot(311)
+velocity = plt.subplot(211)
 plt.grid()
 velocity.set_xlabel("Time")
 velocity.set_ylabel("Speed, m/s")
 plt.plot(time_arr_for_plotting, result_trajectory_v, 'r', linewidth=2)
-plt.plot(time_arr_for_plotting, v_max_vector, 'b--', linewidth=2)
+plt.plot(actual_time_arr_for_plotting, actual_result_trajectory_v, 'g', linewidth=2)
+plt.plot(actual_time_arr_for_plotting, v_max_vector, 'b--', linewidth=2)
 
-beta_plot = plt.subplot(312)
+beta_plot = plt.subplot(212)
 plt.grid()
 beta_plot.set_xlabel("Time")
 beta_plot.set_ylabel("Wheel turning angle, rad")
 plt.plot(time_arr_for_plotting, result_trajectory_beta, 'r', linewidth=2)
-plt.plot(time_arr_for_plotting, beta_max_vector, 'b--', linewidth=2)
-plt.plot(time_arr_for_plotting, beta_max_vector_minus, 'b--', linewidth=2)
+plt.plot(actual_time_arr_for_plotting, actual_result_trajectory_beta, 'g', linewidth=2)
+plt.plot(actual_time_arr_for_plotting, beta_max_vector, 'b--', linewidth=2)
+plt.plot(actual_time_arr_for_plotting, beta_max_vector_minus, 'b--', linewidth=2)
 
-angle_speed = plt.subplot(313)
-plt.grid()
-angle_speed.set_xlabel("Time")
-angle_speed.set_ylabel("Angle speed, rad/s")
-plt.plot(time_arr_for_plotting, result_trajectory_angle_speed, 'r', linewidth=2)
-plt.plot(time_arr_for_plotting, angle_speed_max_vector, 'b--', linewidth=2)
-plt.plot(time_arr_for_plotting, angle_speed_max_vector_minus, 'b--', linewidth=2)
+# angle_speed = plt.subplot(313)
+# plt.grid()
+# angle_speed.set_xlabel("Time")
+# angle_speed.set_ylabel("Angle speed, rad/s")
+# plt.plot(time_arr_for_plotting, result_trajectory_angle_speed, 'r', linewidth=2)
+# plt.plot(time_arr_for_plotting, angle_speed_max_vector, 'b--', linewidth=2)
+# plt.plot(time_arr_for_plotting, angle_speed_max_vector_minus, 'b--', linewidth=2)
 
 # ----------------------------------------------------------------------
 
