@@ -116,7 +116,7 @@ def iteration_of_predict(_global_coordinates, _v, _angle):
 
 
 def new_target(actual_x, actual_y, actual_phi, target_x, target_y, actual_velocity):
-    global x_t, y_t, x_0, y_0, phi_0, v
+    global x_t, y_t, x_0, y_0, phi_0
     print("Previous target: " + str(x_t) + " " + str(y_t))
     x_t = target_x
     y_t = target_y
@@ -140,7 +140,6 @@ def plot_from_actual_to_target(initial_x, initial_y, initial_phi, target_x, targ
 
 
 def turn_left(actual_x, actual_y, actual_phi, distance, actual_velocity):
-    global v
     if math.pi / 2 <= actual_phi <= 3 * math.pi / 2:
         if actual_phi <= math.pi:
             # \ |
@@ -179,7 +178,6 @@ def turn_left(actual_x, actual_y, actual_phi, distance, actual_velocity):
 
 
 def turn_right(actual_x, actual_y, actual_phi, distance, actual_velocity):
-    global v
     if math.pi / 2 <= actual_phi <= 3 * math.pi / 2:
         if actual_phi <= math.pi:
             # \ |
@@ -259,9 +257,9 @@ def vector_of_beta_angles(actual_beta):
 
 
 def get_actual_velocity(velocity_ref):
-    if random.random() < 0.3:
+    if random.random() < 0.7:
         if velocity_ref < 0.4:
-            pertubation_velocity = velocity_ref + (random.randint(0, 10) / 1000)
+            pertubation_velocity = velocity_ref + (random.randint(0, 5) / 1000)
         else:
             pertubation_velocity = velocity_ref + (random.randint(-100, 10) / 1000)
     else:
@@ -270,7 +268,10 @@ def get_actual_velocity(velocity_ref):
 
 
 def get_actual_beta_angle(beta_ref):
-    pertubation_angle = beta_ref + math.radians(random.randint(-10, 10))
+    if random.random() < 0.7:
+        pertubation_angle = beta_ref + math.radians(random.randint(-5, 5))
+    else:
+        pertubation_angle = beta_ref
     return pertubation_angle
 
 
@@ -560,6 +561,12 @@ def math_mpc(initial_coordinates, target_coordinates, isActual):
                 break
             elif x == x_previous and y == y_previous:
                 recursive = True
+            if p == 60:
+                turn_right(x, y, phi, 2, v)
+            if p == 90:
+                turn_left(x, y, phi, 2, v)
+            if p == 110:
+                new_target(x, y, phi, 2, 3, v)
             x_previous = x
             y_previous = y
             print("Iteration number = " + str(p))
@@ -580,7 +587,10 @@ def math_mpc(initial_coordinates, target_coordinates, isActual):
         x_previous = initial_coordinates[0]
         y_previous = initial_coordinates[1]
         while not is_on_target(actual_x, actual_y, x_t, y_t)[0]:
+            # vector_actual_velocities = vector_v_no_constraint
             vector_actual_velocities = vector_of_velocities(actual_velocity)
+
+            # vector_actual_beta_angles = vector_beta_no_constraint
             vector_actual_beta_angles = vector_of_beta_angles(actual_beta)
 
             previous_v = actual_velocity
@@ -590,7 +600,9 @@ def math_mpc(initial_coordinates, target_coordinates, isActual):
             actual_x = actual_coordinates[0]
             actual_y = actual_coordinates[1]
             actual_phi = actual_coordinates[2]
+            # actual_velocity = actual_coordinates[3]
             actual_velocity = get_actual_velocity(actual_coordinates[3])
+            # actual_beta = actual_coordinates[4]
             actual_beta = get_actual_beta_angle(actual_coordinates[4])
 
             actual_result_trajectory_v.append(actual_velocity)
@@ -600,8 +612,16 @@ def math_mpc(initial_coordinates, target_coordinates, isActual):
             if recursive:
                 print("Recursive error.")
                 break
-            elif x == x_previous and y == y_previous:
+            elif actual_x == x_previous and actual_y == y_previous:
                 recursive = True
+            if p == 1:
+                new_target(actual_x, actual_y, actual_phi, 2, 3, actual_velocity)
+            if p == 60:
+                turn_right(actual_x, actual_y, actual_phi, 2, actual_velocity)
+            if p == 90:
+                turn_left(actual_x, actual_y, actual_phi, 2, actual_velocity)
+            if p == 110:
+                new_target(actual_x, actual_y, actual_phi, 2, 3, actual_velocity)
             x_previous = actual_x
             y_previous = actual_y
             print("Iteration number = " + str(p))
@@ -713,9 +733,9 @@ xdata, ydata = [], []
 MODELLING
 """
 # ---------------------------------------------------------------
-math_mpc([0, 0, 0, 0, 0], [0.5, 1], False)
+math_mpc([0, 0, 0, 0, 0], [2, 3], False)
 m = 0
-math_mpc([0, 0, 0, 0, 0], [0.5, 1], True)
+math_mpc([0, 0, 0, 0, 0], [2, 3], True)
 # ---------------------------------------------------------------
 
 for item in time_arr_for_plotting:
@@ -739,11 +759,12 @@ for item in actual_time_arr_for_plotting:
 # Plot polygon-barrier
 # add_plot_polygon([[-1, -1], [-1, -1.9], [-2, -2.2], [-3, -2], [-2, -0.5], [-1, -1]])
 
-plt.plot(result_trajectory_x, result_trajectory_y, 'r', linewidth=1)
+plt.plot(result_trajectory_x, result_trajectory_y, 'r', linewidth=2, label=u"Траектория без актуализации")
 # plt.plot(result_trajectory_x, result_trajectory_y, 'ro', linewidth=1)
 
 plt.plot(actual_result_trajectory_x,
-         actual_result_trajectory_y, 'g-.', linewidth=1)
+         actual_result_trajectory_y, 'g-.', linewidth=2, label="Траектория с актуализацией")
+plt.legend(fontsize=14, loc="upper left")
 # plt.plot(actual_result_trajectory_x,
         #  actual_result_trajectory_y, 'go', linewidth=1)
 # plt.plot(actual_result_trajectory_x, actual_result_trajectory_y, 'ro', linewidth=1)
@@ -759,23 +780,24 @@ ax2.set_aspect(1)
 
 x_coord = plt.subplot(311)
 plt.grid()
-x_coord.set_xlabel("Time")
-x_coord.set_ylabel("Coordinate X, m")
-# plt.plot(time_arr_for_plotting, result_trajectory_x, 'ro', linewidth=1)
+x_coord.set_xlabel("Time", fontsize="large")
+x_coord.set_ylabel("Coordinate X, m", fontsize="large")
+# plt.plot(actual_time_arr_for_plotting, result_trajectory_x, 'ro', linewidth=1)
 plt.plot(time_arr_for_plotting, result_trajectory_x, 'r', linewidth=2)
 
 x_velocity = plt.subplot(312)
 plt.grid()
-x_velocity.set_xlabel("Time")
-x_velocity.set_ylabel("X-Axis speed, m/s")
+x_velocity.set_xlabel("Time", fontsize="large")
+x_velocity.set_ylabel("X-Axis speed, m/s", fontsize="large")
 # plt.plot(time_arr_for_plotting, result_x_velocity, 'ro', linewidth=1)
 plt.plot(time_arr_for_plotting, result_x_velocity, 'r', linewidth=2)
 plt.plot(actual_time_arr_for_plotting, v_max_vector, 'b--', linewidth=2)
+# plt.plot(time_arr_for_plotting, v_max_vector, 'b--', linewidth=2)
 
 x_acceleration = plt.subplot(313)
 plt.grid()
-x_acceleration.set_xlabel("Time")
-x_acceleration.set_ylabel("X-Axis acceleration, m/s^2")
+x_acceleration.set_xlabel("Time", fontsize="large")
+x_acceleration.set_ylabel("X-Axis acceleration, m/s^2", fontsize="large")
 # plt.plot(time_arr_for_plotting, result_x_acceleration, 'ro', linewidth=1)
 plt.plot(time_arr_for_plotting, result_x_acceleration, 'r', linewidth=2)
 plt.plot(time_arr_for_plotting, v_acc_max_vector, 'b--', linewidth=2)
@@ -792,23 +814,24 @@ ax3.set_aspect(1)
 
 y_coord = plt.subplot(311)
 plt.grid()
-y_coord.set_xlabel("Time")
-y_coord.set_ylabel("Coordinate Y, m")
+y_coord.set_xlabel("Time", fontsize="large")
+y_coord.set_ylabel("Coordinate Y, m", fontsize="large")
 # plt.plot(time_arr_for_plotting, result_trajectory_y, 'ro', linewidth=1)
 plt.plot(time_arr_for_plotting, result_trajectory_y, 'r', linewidth=2)
 
 y_velocity = plt.subplot(312)
 plt.grid()
-y_velocity.set_xlabel("Time")
-y_velocity.set_ylabel("Y-Axis speed, m/s")
+y_velocity.set_xlabel("Time", fontsize="large")
+y_velocity.set_ylabel("Y-Axis speed, m/s", fontsize="large")
 # plt.plot(time_arr_for_plotting, result_y_velocity, 'ro', linewidth=1)
-plt.plot(time_arr_for_plotting, result_y_velocity, 'r', linewidth=2)
+# plt.plot(time_arr_for_plotting, result_y_velocity, 'r', linewidth=2)
 plt.plot(actual_time_arr_for_plotting, v_max_vector, 'b--', linewidth=2)
+# plt.plot(time_arr_for_plotting, v_max_vector, 'b--', linewidth=2)
 
 y_acceleration = plt.subplot(313)
 plt.grid()
-y_acceleration.set_xlabel("Time")
-y_acceleration.set_ylabel("Y-Axis acceleration, m/s^2")
+y_acceleration.set_xlabel("Time", fontsize="large")
+y_acceleration.set_ylabel("Y-Axis acceleration, m/s^2", fontsize="large")
 # plt.plot(time_arr_for_plotting, result_y_acceleration, 'ro', linewidth=1)
 plt.plot(time_arr_for_plotting, result_y_acceleration, 'r', linewidth=2)
 plt.plot(time_arr_for_plotting, v_acc_max_vector, 'b--', linewidth=2)
@@ -826,20 +849,25 @@ ax4.set_aspect(1)
 
 velocity = plt.subplot(211)
 plt.grid()
-velocity.set_xlabel("Time")
-velocity.set_ylabel("Speed, m/s")
-plt.plot(time_arr_for_plotting, result_trajectory_v, 'r', linewidth=2)
-plt.plot(actual_time_arr_for_plotting, actual_result_trajectory_v, 'g', linewidth=2)
+velocity.set_xlabel("Time, s", fontsize=24)
+velocity.set_ylabel("Speed, m/s", fontsize=24)
+plt.plot(time_arr_for_plotting, result_trajectory_v, 'r', linewidth=2, label="Программная скорость")
+plt.plot(actual_time_arr_for_plotting, actual_result_trajectory_v, 'g', linewidth=2, label="Актуальная скорость")
 plt.plot(actual_time_arr_for_plotting, v_max_vector, 'b--', linewidth=2)
+plt.plot(actual_time_arr_for_plotting, v_max_vector, 'b--', linewidth=2)
+plt.legend(fontsize=12, loc="upper left")
 
 beta_plot = plt.subplot(212)
 plt.grid()
-beta_plot.set_xlabel("Time")
-beta_plot.set_ylabel("Wheel turning angle, rad")
-plt.plot(time_arr_for_plotting, result_trajectory_beta, 'r', linewidth=2)
-plt.plot(actual_time_arr_for_plotting, actual_result_trajectory_beta, 'g', linewidth=2)
+beta_plot.set_xlabel("Time, s", fontsize=24)
+beta_plot.set_ylabel("Wheel turning angle, rad", fontsize=24)
+plt.plot(time_arr_for_plotting, result_trajectory_beta, 'r', linewidth=2, label="Программный угол руля")
+plt.plot(actual_time_arr_for_plotting, actual_result_trajectory_beta, 'g', linewidth=2, label="Актуальный угол руля")
 plt.plot(actual_time_arr_for_plotting, beta_max_vector, 'b--', linewidth=2)
 plt.plot(actual_time_arr_for_plotting, beta_max_vector_minus, 'b--', linewidth=2)
+plt.legend(fontsize=12, loc="lower left")
+# plt.plot(time_arr_for_plotting, beta_max_vector, 'b--', linewidth=2)
+# plt.plot(time_arr_for_plotting, beta_max_vector_minus, 'b--', linewidth=2)
 
 # angle_speed = plt.subplot(313)
 # plt.grid()
