@@ -1,3 +1,5 @@
+# I'm sorry for bad code, it was done as soon as possible
+
 # DiplomJourney
 This is my bachelor's work. Model predictive control for automobile-robot. 
 
